@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.LanguageSelectionPage"
+             Title="Language"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ContentPage.Resources>
+        <Style x:Key="DividerStyle" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="0.5" />
+            <Setter Property="Color" Value="#E0E0E0" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+        </Style>
+    </ContentPage.Resources>
+
+    <VerticalStackLayout Spacing="0">
+
+        <!-- Search Bar -->
+        <Border StrokeThickness="0" Margin="16,12,16,4" Padding="12,8">
+            <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+            <Border.BackgroundColor>
+                <AppThemeBinding Light="#EBEBEB" Dark="#2C2C2E"/>
+            </Border.BackgroundColor>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center" />
+                <Entry Grid.Column="1"
+                       x:Name="SearchEntry"
+                       Placeholder="Search languages..."
+                       PlaceholderColor="#9E9E9E"
+                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                       BackgroundColor="Transparent"
+                       TextChanged="OnSearchTextChanged" />
+            </Grid>
+        </Border>
+
+        <CollectionView x:Name="LanguageList"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <VerticalStackLayout>
+                        <Grid HeightRequest="56" Padding="16,0">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnLanguageSelected" CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+                            <Label Text="{Binding .}"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                                   VerticalOptions="Center" />
+                            <Label x:Name="RadioCheck"
+                                   Text="●"
+                                   FontSize="20"
+                                   TextColor="#FC5200"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="End"
+                                   IsVisible="False" />
+                        </Grid>
+                        <BoxView HeightRequest="0.5" Color="#E0E0E0" Margin="16,0,0,0" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </VerticalStackLayout>
+</ContentPage>

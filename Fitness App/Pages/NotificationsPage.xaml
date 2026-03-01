@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             xmlns:viewmodels="clr-namespace:Fitness_App.ViewModels"
+             x:Class="Fitness_App.Pages.NotificationsPage"
+             Title="Notifications"
+             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+
+    <ContentPage.BindingContext>
+        <viewmodels:NotificationViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20">
+            
+            <!-- Header -->
+            <Label Text="Your Notifications" 
+                   FontSize="28" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+            <!-- Notifications List -->
+            <CollectionView ItemsSource="{Binding Notifications}"
+                          SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border StrokeThickness="0"
+                               Margin="0,0,0,12"
+                               BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <Border.Shadow>
+                                <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+                                       Radius="15" 
+                                       Opacity="0.08" 
+                                       Offset="0,4" />
+                            </Border.Shadow>
+
+                            <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <!-- Read/Unread Indicator -->
+                                <Ellipse WidthRequest="10" 
+                                        HeightRequest="10"
+                                        VerticalOptions="Start"
+                                        Margin="0,6,0,0">
+                                    <Ellipse.Triggers>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding IsRead}" Value="False">
+                                            <Setter Property="Fill" Value="#FC5200" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding IsRead}" Value="True">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light=#CBD5E1, Dark=#475569}" />
+                                        </DataTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+
+                                <!-- Content -->
+                                <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                    <Label Text="{Binding Title}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                    <Label Text="{Binding Message}" 
+                                           FontSize="14"
+                                           Opacity="0.7"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="2"
+                                           TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                                    <Label FontSize="12"
+                                           Opacity="0.5"
+                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding Timestamp, StringFormat='{0:MMM dd, HH:mm}'}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </VerticalStackLayout>
+
+                                <!-- Arrow Icon -->
+                                <controls:IconLabel Grid.Column="2"
+                                                   Text="{x:Static icons:MaterialSymbols.Chevron_right}" 
+                                                   FontSize="24"
+                                                   Opacity="0.3"
+                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                                   VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Spacing="16" 
+                                       Padding="40"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center">
+                        <Label Text="🔔" 
+                               FontSize="64"
+                               HorizontalOptions="Center" />
+                        <Label Text="No notifications yet" 
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Label Text="We'll notify you when there's something new" 
+                               FontSize="14"
+                               Opacity="0.7"
+                               HorizontalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

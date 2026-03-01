@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.FontSizeSelectionPage"
+             Title="Font Size"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ContentPage.Resources>
+        <Style x:Key="DividerStyle" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="0.5" />
+            <Setter Property="Color" Value="#E0E0E0" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+        </Style>
+        <Style x:Key="RowGridStyle" TargetType="Grid">
+            <Setter Property="HeightRequest" Value="56" />
+            <Setter Property="Padding" Value="16,0" />
+        </Style>
+        <Style x:Key="RowLabelStyle" TargetType="Label">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+            <Setter Property="VerticalOptions" Value="Center" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="0,0,0,40" Spacing="0">
+
+            <!-- Preview Section -->
+            <VerticalStackLayout Padding="16,20,16,16" Spacing="8">
+                <Label Text="Preview Text"
+                       FontSize="12"
+                       TextColor="#9E9E9E"
+                       FontAttributes="Bold"
+                       TextTransform="Uppercase" />
+                <Border StrokeThickness="0" Padding="16,12">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12"/></Border.StrokeShape>
+                    <Border.BackgroundColor>
+                        <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+                    </Border.BackgroundColor>
+                    <Label x:Name="PreviewLabel"
+                           Text="Your activity summary"
+                           FontSize="16"
+                           TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                           HorizontalOptions="Center" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Slider -->
+            <VerticalStackLayout Padding="16,0,16,16" Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="Small" FontSize="12" TextColor="#9E9E9E" VerticalOptions="Center" />
+                    <Slider Grid.Column="1"
+                            x:Name="FontSlider"
+                            Minimum="0"
+                            Maximum="3"
+                            Value="1"
+                            ThumbColor="#FC5200"
+                            MinimumTrackColor="#FC5200"
+                            MaximumTrackColor="#E0E0E0"
+                            ValueChanged="OnSliderValueChanged" />
+                    <Label Grid.Column="2" Text="Large" FontSize="12" TextColor="#9E9E9E" VerticalOptions="Center" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Small -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFontSizeSelected" CommandParameter="Small" />
+                </Grid.GestureRecognizers>
+                <Label Text="Small" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="SmallCheck" Text="●" FontSize="20" TextColor="#FC5200" VerticalOptions="Center" HorizontalOptions="End" IsVisible="False" />
+                <Label x:Name="SmallUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" VerticalOptions="Center" HorizontalOptions="End" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Medium (Default) -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFontSizeSelected" CommandParameter="Medium" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                    <Label Text="Medium" FontSize="16" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+                    <Label Text="Default" FontSize="12" TextColor="#9E9E9E" />
+                </VerticalStackLayout>
+                <Label x:Name="MediumCheck" Text="●" FontSize="20" TextColor="#FC5200" VerticalOptions="Center" HorizontalOptions="End" IsVisible="True" />
+                <Label x:Name="MediumUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" VerticalOptions="Center" HorizontalOptions="End" IsVisible="False" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Large -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFontSizeSelected" CommandParameter="Large" />
+                </Grid.GestureRecognizers>
+                <Label Text="Large" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="LargeCheck" Text="●" FontSize="20" TextColor="#FC5200" VerticalOptions="Center" HorizontalOptions="End" IsVisible="False" />
+                <Label x:Name="LargeUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" VerticalOptions="Center" HorizontalOptions="End" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Extra Large -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFontSizeSelected" CommandParameter="Extra Large" />
+                </Grid.GestureRecognizers>
+                <Label Text="Extra Large" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="ExtraLargeCheck" Text="●" FontSize="20" TextColor="#FC5200" VerticalOptions="Center" HorizontalOptions="End" IsVisible="False" />
+                <Label x:Name="ExtraLargeUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" VerticalOptions="Center" HorizontalOptions="End" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.SendFeedbackPage"
+             Title="Send Feedback"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,20,16,40" Spacing="16">
+
+            <!-- Feedback Type -->
+            <Label Text="What type of feedback?" FontSize="14" TextColor="#9E9E9E" FontAttributes="Bold" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Grid.Column="0" x:Name="BugBorder"
+                        StrokeThickness="2" Stroke="#FC5200" Padding="0" HeightRequest="44">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeSelected" CommandParameter="Bug" />
+                    </Border.GestureRecognizers>
+                    <Label Text="🐛  Bug" FontSize="15" FontAttributes="Bold" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+                <Border Grid.Column="1" x:Name="SuggestionBorder"
+                        StrokeThickness="2" Padding="0" HeightRequest="44">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                    <Border.Stroke>
+                        <AppThemeBinding Light="#E0E0E0" Dark="#444444"/>
+                    </Border.Stroke>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeSelected" CommandParameter="Suggestion" />
+                    </Border.GestureRecognizers>
+                    <Label Text="💡  Suggestion" FontSize="15" FontAttributes="Bold" TextColor="#9E9E9E" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Grid.Column="0" x:Name="OtherBorder"
+                        StrokeThickness="2" Padding="0" HeightRequest="44">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                    <Border.Stroke>
+                        <AppThemeBinding Light="#E0E0E0" Dark="#444444"/>
+                    </Border.Stroke>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeSelected" CommandParameter="Other" />
+                    </Border.GestureRecognizers>
+                    <Label Text="⭐  Other" FontSize="15" FontAttributes="Bold" TextColor="#9E9E9E" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+                <BoxView Grid.Column="1" IsVisible="False" />
+            </Grid>
+
+            <!-- Feedback Text -->
+            <Label Text="Your feedback" FontSize="14" TextColor="#9E9E9E" FontAttributes="Bold" />
+            <Border StrokeThickness="1" Padding="12,8">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                <Border.Stroke>
+                    <AppThemeBinding Light="#E0E0E0" Dark="#333333"/>
+                </Border.Stroke>
+                <Border.BackgroundColor>
+                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+                </Border.BackgroundColor>
+                <Editor x:Name="FeedbackEditor"
+                        Placeholder="Describe your feedback here..."
+                        PlaceholderColor="#9E9E9E"
+                        TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                        BackgroundColor="Transparent"
+                        MinimumHeightRequest="120"
+                        MaxLength="500"
+                        TextChanged="OnFeedbackTextChanged" />
+            </Border>
+            <Label x:Name="CharCount" Text="0/500" FontSize="12" TextColor="#9E9E9E" HorizontalOptions="End" />
+
+            <!-- Screenshot -->
+            <Label Text="Attach screenshot (optional)" FontSize="14" TextColor="#9E9E9E" FontAttributes="Bold" />
+            <Border StrokeThickness="1.5" Padding="0" HeightRequest="56">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                <Border.Stroke>
+                    <AppThemeBinding Light="#E0E0E0" Dark="#444444"/>
+                </Border.Stroke>
+                <Border.BackgroundColor>
+                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+                </Border.BackgroundColor>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAddImage" />
+                </Border.GestureRecognizers>
+                <Label Text="+ Add Image"
+                       FontSize="15"
+                       TextColor="#FC5200"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Border>
+
+            <!-- Send Button -->
+            <Button Text="Send Feedback"
+                    Clicked="OnSendFeedback"
+                    BackgroundColor="#FC5200"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    FontSize="16"
+                    CornerRadius="12"
+                    HeightRequest="52"
+                    Margin="0,8,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

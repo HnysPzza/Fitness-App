@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.DateTimeFormatSelectionPage"
+             Title="Date &amp; Time Format"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ContentPage.Resources>
+        <Style x:Key="SectionHeaderStyle" TargetType="Label">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextColor" Value="#9E9E9E" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="Padding" Value="16,20,16,8" />
+            <Setter Property="TextTransform" Value="Uppercase" />
+        </Style>
+        <Style x:Key="RowGridStyle" TargetType="Grid">
+            <Setter Property="HeightRequest" Value="56" />
+            <Setter Property="Padding" Value="16,0" />
+        </Style>
+        <Style x:Key="RowLabelStyle" TargetType="Label">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+            <Setter Property="VerticalOptions" Value="Center" />
+        </Style>
+        <Style x:Key="DividerStyle" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="0.5" />
+            <Setter Property="Color" Value="#E0E0E0" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="0,0,0,40">
+
+            <!-- Date Format -->
+            <Label Text="Date Format" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDateFormatSelected" CommandParameter="DD/MM/YYYY" />
+                </Grid.GestureRecognizers>
+                <Label Text="DD/MM/YYYY" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="DdCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+                <Label x:Name="DdUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDateFormatSelected" CommandParameter="MM/DD/YYYY" />
+                </Grid.GestureRecognizers>
+                <Label Text="MM/DD/YYYY" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="MmCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Label x:Name="MmUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDateFormatSelected" CommandParameter="YYYY-MM-DD" />
+                </Grid.GestureRecognizers>
+                <Label Text="YYYY-MM-DD" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="IsoCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Label x:Name="IsoUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Time Format -->
+            <Label Text="Time Format" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTimeFormatSelected" CommandParameter="12-Hour (AM/PM)" />
+                </Grid.GestureRecognizers>
+                <Label Text="12-Hour (AM/PM)" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="H12Check" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+                <Label x:Name="H12Uncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTimeFormatSelected" CommandParameter="24-Hour" />
+                </Grid.GestureRecognizers>
+                <Label Text="24-Hour" Style="{StaticResource RowLabelStyle}" />
+                <Label x:Name="H24Check" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Label x:Name="H24Uncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Preview -->
+            <Label Text="Preview" Style="{StaticResource SectionHeaderStyle}" />
+            <Border StrokeThickness="0" Margin="16,0" Padding="16,12">
+                <Border.StrokeShape><RoundRectangle CornerRadius="12"/></Border.StrokeShape>
+                <Border.BackgroundColor>
+                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+                </Border.BackgroundColor>
+                <Label x:Name="PreviewLabel"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                       HorizontalOptions="Center" />
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

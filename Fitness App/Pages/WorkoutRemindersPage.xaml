@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.WorkoutRemindersPage"
+             Title="Workout Reminders"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ContentPage.Resources>
+        <Style x:Key="DividerStyle" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="0.5" />
+            <Setter Property="Color" Value="#E0E0E0" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="0,0,0,40">
+
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Enable Reminders Toggle -->
+            <Grid Padding="16,0" HeightRequest="56">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Text="Enable Reminders" FontSize="16"
+                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                       VerticalOptions="Center" />
+                <Switch Grid.Column="1"
+                        x:Name="EnableSwitch"
+                        OnColor="#FC5200"
+                        VerticalOptions="Center"
+                        Toggled="OnEnableToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Settable content (grays out when disabled) -->
+            <VerticalStackLayout x:Name="RemindersContent">
+
+                <!-- Reminder Time -->
+                <Grid Padding="16,0" HeightRequest="56">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTimeTapped" />
+                    </Grid.GestureRecognizers>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Text="Reminder Time" FontSize="16"
+                           TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                           VerticalOptions="Center" />
+                    <StackLayout Grid.Column="1" Orientation="Horizontal" VerticalOptions="Center" Spacing="4">
+                        <Label x:Name="TimeLabel" Text="7:00 AM" FontSize="15" TextColor="#9E9E9E" VerticalOptions="Center" />
+                        <Label Text="›" FontSize="22" TextColor="#BDBDBD" VerticalOptions="Center" />
+                    </StackLayout>
+                </Grid>
+                <BoxView Style="{StaticResource DividerStyle}" />
+
+                <!-- Repeat Days -->
+                <Grid Padding="16,12" MinimumHeightRequest="56">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDaysTapped" />
+                    </Grid.GestureRecognizers>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="2">
+                        <Label Text="Repeat" FontSize="16"
+                               TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+                        <Label x:Name="DaysLabel" Text="Mon, Wed, Fri" FontSize="13" TextColor="#9E9E9E" />
+                    </VerticalStackLayout>
+                    <Label Grid.Column="1" Text="›" FontSize="22" TextColor="#BDBDBD" VerticalOptions="Center" />
+                </Grid>
+                <BoxView Style="{StaticResource DividerStyle}" />
+
+                <!-- Reminder Message -->
+                <Grid Padding="16,12" MinimumHeightRequest="56">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMessageTapped" />
+                    </Grid.GestureRecognizers>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="2">
+                        <Label Text="Reminder Message" FontSize="16"
+                               TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+                        <Label x:Name="MessageLabel" Text="Time to get moving!" FontSize="13" TextColor="#9E9E9E" />
+                    </VerticalStackLayout>
+                    <Label Grid.Column="1" Text="›" FontSize="22" TextColor="#BDBDBD" VerticalOptions="Center" />
+                </Grid>
+                <BoxView Style="{StaticResource DividerStyle}" />
+
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             x:Class="Fitness_App.Pages.ActiveRecordingPage"
+             NavigationPage.HasNavigationBar="False"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#111111">
+
+    <Grid RowDefinitions="*, Auto, Auto">
+        <!-- Map Background (Fullscreen) -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" BackgroundColor="#111111">
+            <!-- Simulated Map Polyline / Route -->
+            <Path Stroke="#FC4C02" StrokeThickness="4" Opacity="0.7">
+                <Path.Data>
+                    <PathGeometry>
+                        <PathFigure StartPoint="100,200">
+                            <LineSegment Point="150,150" />
+                            <LineSegment Point="200,180" />
+                            <LineSegment Point="250,120" />
+                        </PathFigure>
+                    </PathGeometry>
+                </Path.Data>
+            </Path>
+            
+            <!-- User Location -->
+            <Ellipse WidthRequest="20" HeightRequest="20" Fill="#2563EB" 
+                     HorizontalOptions="Center" VerticalOptions="Center" TranslationX="50" TranslationY="-80"/>
+            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Arrow_upward}" 
+                               TextColor="White" FontSize="12"
+                               HorizontalOptions="Center" VerticalOptions="Center" 
+                               TranslationX="50" TranslationY="-80"/>
+            
+            <!-- Top Bar -->
+            <Grid VerticalOptions="Start" Padding="20,40,20,0" ColumnDefinitions="Auto, *, Auto">
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <controls:IconLabel x:Name="SportIcon" Text="{x:Static icons:MaterialSymbols.Directions_run}" TextColor="White" FontSize="24" />
+                    <Label x:Name="SportNameLabel" Text="Running" FontSize="18" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                
+                <Label x:Name="TimerLabel" Grid.Column="2" Text="00:00:00" FontSize="22" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" />
+            </Grid>
+        </Grid>
+
+        <!-- Stats Bar -->
+        <Border Grid.Row="1" BackgroundColor="#1A1A2ECC" StrokeThickness="0" Margin="16,0,16,16">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="16" />
+            </Border.StrokeShape>
+            <Grid ColumnDefinitions="*, *, *" Padding="16" RowDefinitions="Auto, Auto">
+                <!-- Row 0: Labels -->
+                <Label Grid.Row="0" Grid.Column="0" Text="DISTANCE" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                <Label Grid.Row="0" Grid.Column="1" Text="PACE" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                <Label Grid.Row="0" Grid.Column="2" Text="HR" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                
+                <!-- Row 1: Values -->
+                <Label x:Name="DistanceLabel" Grid.Row="1" Grid.Column="0" Text="0.00 km" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                <Label x:Name="PaceLabel" Grid.Row="1" Grid.Column="1" Text="--:--" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                <Label x:Name="HrLabel" Grid.Row="1" Grid.Column="2" Text="-- bpm" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Controls Bar -->
+        <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="16" Padding="24,16,24,32" BackgroundColor="#1A1A2E">
+            <Button x:Name="PauseResumeButton" Text="⏸ Pause" Clicked="OnPauseResumeClicked" BackgroundColor="#F59E0B" TextColor="White" FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
+            <Button Grid.Column="1" Text="⏹ Finish" Clicked="OnFinishClicked" BackgroundColor="#FC4C02" TextColor="White" FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
+        </Grid>
+    </Grid>
+</ContentPage>

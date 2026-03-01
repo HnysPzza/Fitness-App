@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             x:Class="Fitness_App.Pages.EditProfilePage"
+             Title="Edit Profile"
+             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Edit Profile" 
+                       FontSize="32" 
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                <Label Text="Update your personal information" 
+                       FontSize="14" 
+                       Opacity="0.7"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+            </VerticalStackLayout>
+
+            <!-- Profile Photo Section -->
+            <Border StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+                            Radius="20" 
+                            Opacity="0.1" 
+                            Offset="0,6" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Padding="24" Spacing="16" HorizontalOptions="Center">
+                    <!-- Photo Circle -->
+                    <Border HeightRequest="100"
+                            WidthRequest="100"
+                            StrokeThickness="3"
+                            Stroke="#FC5200"
+                            HorizontalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="50" />
+                        </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="#FC5200" Radius="25" Opacity="0.3" Offset="0,4" />
+                        </Border.Shadow>
+                        <Grid>
+                            <Border x:Name="ProfileIconContainer"
+                                    BackgroundColor="{AppThemeBinding Light=#E0E7FF, Dark=#334155}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="48" />
+                                </Border.StrokeShape>
+                                <controls:IconLabel x:Name="ProfileIcon"
+                                                   Text="{x:Static icons:MaterialSymbols.Person}" 
+                                                   FontSize="52"
+                                                   TextColor="#FC5200"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                            </Border>
+                            <Image x:Name="ProfileImage"
+                                   IsVisible="False"
+                                   Aspect="AspectFill"
+                                   WidthRequest="94"
+                                   HeightRequest="94"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                                <Image.Clip>
+                                    <EllipseGeometry Center="47,47" RadiusX="47" RadiusY="47" />
+                                </Image.Clip>
+                            </Image>
+                        </Grid>
+                    </Border>
+
+                    <!-- Photo Action Buttons -->
+                    <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                        <Border BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#3B1F0A}"
+                                Padding="16,10"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTakePhotoClicked" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="8">
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Photo_camera}" 
+                                                   FontSize="20"
+                                                   TextColor="#FC5200"
+                                                   VerticalOptions="Center" />
+                                <Label Text="Camera" 
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="#FC5200"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <Border BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E2A4A}"
+                                Padding="16,10"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPickPhotoClicked" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="8">
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Photo_library}" 
+                                                   FontSize="20"
+                                                   TextColor="#2563EB"
+                                                   VerticalOptions="Center" />
+                                <Label Text="Gallery" 
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="#2563EB"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Personal Information Section -->
+            <Border StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+                            Radius="20" 
+                            Opacity="0.1" 
+                            Offset="0,6" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Padding="24" Spacing="20">
+                    <Label Text="Personal Information" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+                    <!-- First Name -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="First Name" 
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Border BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#334155}"
+                                Padding="16,4"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#475569}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="FirstNameEntry"
+                                   Placeholder="Enter first name"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                   PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Last Name -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Last Name" 
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Border BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#334155}"
+                                Padding="16,4"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#475569}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="LastNameEntry"
+                                   Placeholder="Enter last name"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                   PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Address -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Address / Location" 
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Border BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#334155}"
+                                Padding="16,4"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#475569}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="AddressEntry"
+                                   Placeholder="Enter your address"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                   PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Gender -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Gender" 
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Border BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#334155}"
+                                Padding="8,0"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#475569}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Picker x:Name="GenderPicker"
+                                    Title="Select gender"
+                                    FontSize="16"
+                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                    TitleColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}">
+                                <Picker.Items>
+                                    <x:String>Male</x:String>
+                                    <x:String>Female</x:String>
+                                    <x:String>Non-binary</x:String>
+                                    <x:String>Prefer not to say</x:String>
+                                </Picker.Items>
+                            </Picker>
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Status Label -->
+            <Label x:Name="SaveStatusLabel"
+                   Text=""
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="#10B981"
+                   HorizontalOptions="Center"
+                   IsVisible="False" />
+
+            <!-- Save Button -->
+            <Button x:Name="SaveButton"
+                    Text="Save Changes"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    TextColor="White"
+                    HeightRequest="60"
+                    CornerRadius="20"
+                    Clicked="OnSaveClicked">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#FC5200" Offset="0" />
+                        <GradientStop Color="#FF6B35" Offset="1" />
+                    </LinearGradientBrush>
+                </Button.Background>
+                <Button.Shadow>
+                    <Shadow Brush="#FC5200" Radius="20" Opacity="0.35" Offset="0,6" />
+                </Button.Shadow>
+            </Button>
+
+            <!-- Cancel Link -->
+            <Label Text="Cancel"
+                   FontSize="16"
+                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,20">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCancelClicked" />
+                </Label.GestureRecognizers>
+            </Label>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

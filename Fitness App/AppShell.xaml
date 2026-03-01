@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Fitness_App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:Fitness_App"
+    xmlns:pages="clr-namespace:Fitness_App.Pages"
+    Title="Fitness_App">
+
+    <TabBar>
+        <ShellContent
+            Title="Home"
+            Route="home"
+            ContentTemplate="{DataTemplate pages:HomePage}">
+            <ShellContent.Icon>
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="home" Size="24" />
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <ShellContent
+            Title="Maps"
+            Route="maps"
+            ContentTemplate="{DataTemplate pages:MapsPage}">
+            <ShellContent.Icon>
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="map" Size="24" />
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <ShellContent
+            Title="Record"
+            Route="record"
+            ContentTemplate="{DataTemplate pages:RecordPage}">
+            <ShellContent.Icon>
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="play_circle" Size="24" />
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <ShellContent
+            Title="You"
+            Route="you"
+            ContentTemplate="{DataTemplate pages:YouPage}">
+            <ShellContent.Icon>
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="person" Size="24" />
+            </ShellContent.Icon>
+        </ShellContent>
+    </TabBar>
+
+</Shell>

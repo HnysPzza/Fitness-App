@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             x:Class="Fitness_App.Pages.GeneralSettingsPage"
+             Title="General Settings"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ContentPage.Resources>
+        <Style x:Key="SectionHeaderStyle" TargetType="Label">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextColor" Value="#9E9E9E" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="Padding" Value="16,20,16,8" />
+            <Setter Property="CharacterSpacing" Value="0.5" />
+            <Setter Property="TextTransform" Value="Uppercase" />
+        </Style>
+
+        <Style x:Key="RowGridStyle" TargetType="Grid">
+            <Setter Property="HeightRequest" Value="56" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="BackgroundColor" Value="Transparent" />
+        </Style>
+
+        <Style x:Key="RowLabelStyle" TargetType="Label">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+            <Setter Property="VerticalOptions" Value="Center" />
+        </Style>
+
+        <Style x:Key="ChevronStyle" TargetType="Label">
+            <Setter Property="FontFamily" Value="MaterialSymbols" />
+            <Setter Property="Text" Value="{x:Static icons:MaterialSymbols.Chevron_right}" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="TextColor" Value="#BDBDBD" />
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Setter Property="HorizontalOptions" Value="End" />
+        </Style>
+
+        <Style x:Key="DividerStyle" TargetType="BoxView">
+            <Setter Property="HeightRequest" Value="0.5" />
+            <Setter Property="Color" Value="#E0E0E0" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="VerticalOptions" Value="End" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="0,0,0,40">
+
+            <!-- ═════════════════ NOTIFICATIONS ═════════════════ -->
+            <Label Text="NOTIFICATIONS" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Push Notifications (master toggle) -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Label Text="Push Notifications" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="PushNotificationsSwitch"
+                        IsToggled="True"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnPushNotificationsToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- Workout Reminders row (tap for detail) -->
+            <Grid x:Name="WorkoutRemindersRow" Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnWorkoutRemindersDetail" />
+                </Grid.GestureRecognizers>
+                <Label Text="Workout Reminders" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="WorkoutRemindersSwitch"
+                        IsToggled="True"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnWorkoutRemindersToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid x:Name="AchievementAlertsRow" Style="{StaticResource RowGridStyle}">
+                <Label Text="Achievement Alerts" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="AchievementAlertsSwitch"
+                        IsToggled="True"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnAchievementAlertsToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid x:Name="WeeklySummaryRow" Style="{StaticResource RowGridStyle}">
+                <Label Text="Weekly Summary" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="WeeklySummarySwitch"
+                        IsToggled="True"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnWeeklySummaryToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ APPEARANCE ═════════════════ -->
+            <Label Text="APPEARANCE" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnThemeTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Theme" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAccentColorTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Accent Color" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFontSizeTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Font Size" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ LANGUAGE & REGION ═════════════════ -->
+            <Label Text="LANGUAGE &amp; REGION" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLanguageTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Language" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnUnitsTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Units" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDateTimeTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Date &amp; Time Format" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ PRIVACY & SECURITY ═════════════════ -->
+            <Label Text="PRIVACY &amp; SECURITY" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnChangePasswordTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Change Password" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTwoFactorTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Two-Factor Authentication (2FA)" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDataSharingTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Data Sharing Preferences" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDownloadDataTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Download My Data" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ ACCESSIBILITY ═════════════════ -->
+            <Label Text="ACCESSIBILITY" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Label Text="Screen Reader Support" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="ScreenReaderSwitch"
+                        IsToggled="False"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnScreenReaderToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Label Text="High Contrast Mode" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="HighContrastSwitch"
+                        IsToggled="False"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnHighContrastToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Label Text="Reduce Motion" Style="{StaticResource RowLabelStyle}" />
+                <Switch x:Name="ReduceMotionSwitch"
+                        IsToggled="False"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        OnColor="#FC5200"
+                        Toggled="OnReduceMotionToggled" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ CONNECTED SERVICES ═════════════════ -->
+            <Label Text="CONNECTED SERVICES" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLinkedAppsTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Linked Apps" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnWearableDevicesTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Wearable Devices" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ ABOUT & SUPPORT ═════════════════ -->
+            <Label Text="ABOUT &amp; SUPPORT" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- App Version row with long press -->
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAppVersionLongPress" NumberOfTapsRequired="2" />
+                </Grid.GestureRecognizers>
+                <Label Text="App Version" Style="{StaticResource RowLabelStyle}" />
+                <Label Text="1.0.0" FontSize="16" TextColor="#BDBDBD" VerticalOptions="Center" HorizontalOptions="End" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHelpFaqTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Help &amp; FAQ" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSendFeedbackTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Send Feedback" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRateTheAppTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Rate the App" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTermsOfServiceTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Terms of Service" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPrivacyPolicyTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Privacy Policy" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <!-- ═════════════════ ACCOUNT ═════════════════ -->
+            <Label Text="ACCOUNT" Style="{StaticResource SectionHeaderStyle}" />
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSwitchAccountTapped" />
+                </Grid.GestureRecognizers>
+                <Label Text="Switch Account" Style="{StaticResource RowLabelStyle}" />
+                <Label Style="{StaticResource ChevronStyle}" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Grid Style="{StaticResource RowGridStyle}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDeleteAccountClicked" />
+                </Grid.GestureRecognizers>
+                <Label Text="Delete Account" FontSize="16" TextColor="#E53935" VerticalOptions="Center" />
+            </Grid>
+            <BoxView Style="{StaticResource DividerStyle}" />
+
+            <Button Text="Log Out"
+                    Clicked="OnLogoutClicked"
+                    BackgroundColor="#FC5200"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    FontSize="16"
+                    CornerRadius="12"
+                    HeightRequest="48"
+                    Margin="16,32,16,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

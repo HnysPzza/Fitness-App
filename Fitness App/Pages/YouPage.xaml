@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             x:Class="Fitness_App.Pages.YouPage"
+             Title="You"
+             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- Header with Profile Info -->
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                <!-- Profile Picture -->
+                <Border HeightRequest="72"
+                        WidthRequest="72"
+                        StrokeThickness="3"
+                        Stroke="#FC5200">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="36" />
+                    </Border.StrokeShape>
+                    <Grid>
+                        <Border x:Name="ProfileIconContainer"
+                                BackgroundColor="{AppThemeBinding Light=#E0E7FF, Dark=#334155}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="34" />
+                            </Border.StrokeShape>
+                            <controls:IconLabel x:Name="ProfileIcon"
+                                               Text="{x:Static icons:MaterialSymbols.Person}"
+                                               FontSize="40"
+                                               TextColor="#FC5200"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                        </Border>
+                        <Image x:Name="ProfileImage"
+                               IsVisible="False"
+                               Aspect="AspectFill"
+                               WidthRequest="66"
+                               HeightRequest="66"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+                            <Image.Clip>
+                                <EllipseGeometry Center="33,33" RadiusX="33" RadiusY="33" />
+                            </Image.Clip>
+                        </Image>
+                    </Grid>
+                </Border>
+
+                <!-- User Info -->
+                <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                    <Label x:Name="UserNameLabel"
+                           Text="Athlete 🔥"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    <Label Text="StrideX Member since Feb 2026"
+                           FontSize="12"
+                           Opacity="0.7"
+                           TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                </VerticalStackLayout>
+
+                <!-- Settings Icon -->
+                <Border Grid.Column="2"
+                        Style="{StaticResource NeoIconButtonBorder}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}"
+                        VerticalOptions="Start">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSettingsClicked" />
+                    </Border.GestureRecognizers>
+                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Settings}"
+                                       FontSize="22"
+                                       TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                </Border>
+            </Grid>
+
+            <!-- Lifetime Stats -->
+            <Border StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+
+                <Grid Padding="24,20"
+                      ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="20"
+                      RowSpacing="16">
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label x:Name="StatKmLabel"
+                               Text="0.0"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#FC5200" />
+                        <Label Text="Total Kilometers"
+                               FontSize="12"
+                               Opacity="0.7"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label x:Name="StatActivitiesLabel"
+                               Text="0"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#10B981" />
+                        <Label Text="Total Activities"
+                               FontSize="12"
+                               Opacity="0.7"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="1" Spacing="4">
+                        <Label x:Name="StatTimeLabel"
+                               Text="0h 0m"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#2563EB" />
+                        <Label Text="Total Time"
+                               FontSize="12"
+                               Opacity="0.7"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                        <Label x:Name="StatSpeedLabel"
+                               Text="0.0"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#8B5CF6" />
+                        <Label Text="Avg Speed (km/h)"
+                               FontSize="12"
+                               Opacity="0.7"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <!-- Progress Chart Card -->
+            <Border StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Padding="20" Spacing="16">
+                    <Label Text="Your Progress"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+                    <!-- Segmented Control -->
+                    <Border StrokeThickness="0"
+                            Padding="4"
+                            BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                            <!-- Today Tab -->
+                            <Border x:Name="TabToday"
+                                    BackgroundColor="#FC5200">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTabToday" />
+                                </Border.GestureRecognizers>
+                                <Label x:Name="TabTodayLabel"
+                                       Text="Today"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Padding="8"
+                                       TextColor="White" />
+                            </Border>
+                            <!-- Week Tab -->
+                            <Border x:Name="TabWeek"
+                                    Grid.Column="1"
+                                    BackgroundColor="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTabWeek" />
+                                </Border.GestureRecognizers>
+                                <Label x:Name="TabWeekLabel"
+                                       Text="Week"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Padding="8"
+                                       TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            </Border>
+                            <!-- Month Tab -->
+                            <Border x:Name="TabMonth"
+                                    Grid.Column="2"
+                                    BackgroundColor="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTabMonth" />
+                                </Border.GestureRecognizers>
+                                <Label x:Name="TabMonthLabel"
+                                       Text="Month"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Padding="8"
+                                       TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- SkiaSharp lightweight chart -->
+                    <skia:SKCanvasView x:Name="ChartCanvas"
+                                       HeightRequest="200"
+                                       PaintSurface="OnChartPaint" />
+
+                    <!-- X-axis labels row -->
+                    <Grid x:Name="XLabelsGrid"
+                          ColumnDefinitions="*,*,*,*,*,*"
+                          Margin="4,0">
+                        <!-- filled in code-behind -->
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Recent Activities -->
+            <VerticalStackLayout Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="Recent Activities 🏃"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    <Label Grid.Column="1"
+                           Text="View all →"
+                           FontSize="13"
+                           TextColor="#FC5200"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center" />
+                </Grid>
+
+                <!-- Activity Card 1 -->
+                <Border StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border HeightRequest="48"
+                                WidthRequest="48"
+                                BackgroundColor="#FEF3C7">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Directions_run}"
+                                               FontSize="26"
+                                               TextColor="#F59E0B"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                            <Label Text="Morning Run"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                            <Label Text="5.2 km • 28:45 • Feb 15"
+                                   FontSize="12"
+                                   Opacity="0.7"
+                                   TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        </VerticalStackLayout>
+                        <controls:IconLabel Grid.Column="2"
+                                           Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                           FontSize="22"
+                                           Opacity="0.4"
+                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                           VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Activity Card 2 -->
+                <Border StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border HeightRequest="48"
+                                WidthRequest="48"
+                                BackgroundColor="#DBEAFE">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Directions_walk}"
+                                               FontSize="26"
+                                               TextColor="#2563EB"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                            <Label Text="Evening Walk"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                            <Label Text="3.1 km • 35:12 • Feb 14"
+                                   FontSize="12"
+                                   Opacity="0.7"
+                                   TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        </VerticalStackLayout>
+                        <controls:IconLabel Grid.Column="2"
+                                           Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                           FontSize="22"
+                                           Opacity="0.4"
+                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                           VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Activity Card 3 -->
+                <Border StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border HeightRequest="48"
+                                WidthRequest="48"
+                                BackgroundColor="#D1FAE5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Pedal_bike}"
+                                               FontSize="26"
+                                               TextColor="#10B981"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                            <Label Text="Afternoon Cycling"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                            <Label Text="12.5 km • 42:30 • Feb 14"
+                                   FontSize="12"
+                                   Opacity="0.7"
+                                   TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        </VerticalStackLayout>
+                        <controls:IconLabel Grid.Column="2"
+                                           Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                           FontSize="22"
+                                           Opacity="0.4"
+                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                           VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- bottom padding -->
+            <BoxView HeightRequest="20" Color="Transparent" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

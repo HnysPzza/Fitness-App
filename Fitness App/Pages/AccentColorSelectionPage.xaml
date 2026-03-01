@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fitness_App.Pages.AccentColorSelectionPage"
+             Title="Accent Color"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,20,16,40" Spacing="20">
+
+            <Label Text="Choose your highlight color"
+                   FontSize="14"
+                   TextColor="#9E9E9E"
+                   HorizontalOptions="Center" />
+
+            <!-- Color Swatches Row 1 -->
+            <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="12">
+                <Border Grid.Column="0" x:Name="Color1" WidthRequest="52" HeightRequest="52" BackgroundColor="#FC5200" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#FC5200"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check1" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True"/>
+                </Border>
+                <Border Grid.Column="1" x:Name="Color2" WidthRequest="52" HeightRequest="52" BackgroundColor="#2196F3" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#2196F3"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check2" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="2" x:Name="Color3" WidthRequest="52" HeightRequest="52" BackgroundColor="#4CAF50" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#4CAF50"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check3" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="3" x:Name="Color4" WidthRequest="52" HeightRequest="52" BackgroundColor="#9C27B0" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#9C27B0"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check4" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="4" x:Name="Color5" WidthRequest="52" HeightRequest="52" BackgroundColor="#F44336" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#F44336"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check5" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="5" x:Name="Color6" WidthRequest="52" HeightRequest="52" BackgroundColor="#FF9800" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#FF9800"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check6" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+            </Grid>
+
+            <!-- Color Swatches Row 2 -->
+            <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="12">
+                <Border Grid.Column="0" x:Name="Color7" WidthRequest="52" HeightRequest="52" BackgroundColor="#00BCD4" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#00BCD4"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check7" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="1" x:Name="Color8" WidthRequest="52" HeightRequest="52" BackgroundColor="#E91E63" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#E91E63"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check8" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="2" x:Name="Color9" WidthRequest="52" HeightRequest="52" BackgroundColor="#607D8B" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#607D8B"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check9" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="3" x:Name="Color10" WidthRequest="52" HeightRequest="52" BackgroundColor="#795548" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#795548"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check10" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="4" x:Name="Color11" WidthRequest="52" HeightRequest="52" BackgroundColor="#3F51B5" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#3F51B5"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check11" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+                <Border Grid.Column="5" x:Name="Color12" WidthRequest="52" HeightRequest="52" BackgroundColor="#009688" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="26"/></Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnColorSelected" CommandParameter="#009688"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="Check12" Text="✓" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False"/>
+                </Border>
+            </Grid>
+
+            <!-- Preview Section -->
+            <BoxView HeightRequest="0.5" Color="#E0E0E0" Margin="0,8,0,0" />
+            <Label Text="Preview"
+                   FontSize="12"
+                   TextColor="#9E9E9E"
+                   FontAttributes="Bold"
+                   TextTransform="Uppercase"
+                   Margin="0,8,0,0" />
+
+            <Border StrokeThickness="0" Padding="16">
+                <Border.StrokeShape><RoundRectangle CornerRadius="12"/></Border.StrokeShape>
+                <Border.BackgroundColor>
+                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+                </Border.BackgroundColor>
+
+                <VerticalStackLayout Spacing="12">
+                    <Button x:Name="PreviewButton"
+                            Text="Sample Button"
+                            BackgroundColor="#FC5200"
+                            TextColor="White"
+                            CornerRadius="10"
+                            FontAttributes="Bold"
+                            HeightRequest="44" />
+                    <Label x:Name="PreviewLabel"
+                           Text="This is your accent color in action."
+                           FontSize="14"
+                           TextColor="#9E9E9E"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

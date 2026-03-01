@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:charts="clr-namespace:Syncfusion.Maui.Charts;assembly=Syncfusion.Maui.Charts"
+             xmlns:vm="clr-namespace:Fitness_App.ViewModels"
+             x:Class="Fitness_App.Pages.ProgressPage"
+             x:DataType="vm:ProgressViewModel"
+             Title="Progress">
+
+    <Grid Padding="20" RowSpacing="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Label Text="Fitness Progress" FontSize="22" FontAttributes="Bold" />
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
+            <Button Text="Daily" Command="{Binding SwitchViewCommand}" CommandParameter="Daily" />
+            <Button Grid.Column="1" Text="Weekly" Command="{Binding SwitchViewCommand}" CommandParameter="Weekly" />
+            <Button Grid.Column="2" Text="Monthly" Command="{Binding SwitchViewCommand}" CommandParameter="Monthly" />
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource NeoCardBorder}" Padding="12">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="18" />
+            </Border.StrokeShape>
+
+            <Grid HeightRequest="280">
+                <charts:SfCartesianChart HeightRequest="260">
+
+                    <charts:SfCartesianChart.XAxes>
+                        <charts:ChartAxisCollection>
+                            <Binding Path="XAxis" />
+                        </charts:ChartAxisCollection>
+                    </charts:SfCartesianChart.XAxes>
+
+                    <charts:SfCartesianChart.YAxes>
+                        <charts:ChartAxisCollection>
+                            <Binding Path="YAxis" />
+                        </charts:ChartAxisCollection>
+                    </charts:SfCartesianChart.YAxes>
+
+                    <charts:SfCartesianChart.ChartBehaviors>
+                        <charts:ChartTrackballBehavior ShowLine="True"
+                                                       ShowLabel="True" />
+                    </charts:SfCartesianChart.ChartBehaviors>
+
+                    <charts:AreaSeries ItemsSource="{Binding Points}"
+                                      XBindingPath="Time"
+                                      YBindingPath="Value"
+                                      EnableAnimation="{Binding EnableInitialAnimation}"
+                                      Stroke="#FC5200"
+                                      StrokeWidth="3">
+                        <charts:AreaSeries.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#66FC5200" Offset="0" />
+                                <GradientStop Color="#00FC5200" Offset="1" />
+                            </LinearGradientBrush>
+                        </charts:AreaSeries.Fill>
+                    </charts:AreaSeries>
+                </charts:SfCartesianChart>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>
