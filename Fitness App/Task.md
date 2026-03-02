@@ -1,295 +1,137 @@
-# Task: Debug Record Page Crash — Android Only
+# Task.md — Debug Mode: Record Screen Issues
+
+## Overview
+Two confirmed issues on the **Record** screen of the Android application:
+
+1. **UI Bug** — Misaligned/duplicate Record button (visual glitch)
+2. **Crash** — Page crashes when run independently on device (likely memory/rendering related)
 
 ---
 
-## Goal
-Find and fix the root cause of the Record Page crash on Android.
-Follow each step in order. Stop when the crash is resolved.
+## Issue 1: Mismatched Record Button (UI Bug)
+
+### Observed Behavior
+From the screenshot, there are **two orange circular elements** visible:
+- A **blurred/glowing orange orb** (larger, unfocused) sitting above the actual button
+- A **sharp orange play button** (the real CTA button) below it
+
+This suggests a **ghost/shadow view** is being rendered behind the actual button — likely a duplicate layer or an incorrectly positioned View with the same background color.
+
+### Likely Root Causes
+- A `View` or `ImageView` with an orange background is positioned absolutely and overlapping the button
+- An **elevation shadow** or **ripple drawable** is leaking outside its bounds
+- A **Lottie animation** or **pulse animation** for the record button is not being clipped correctly
+- A `CoordinatorLayout` or `ConstraintLayout` child with `match_parent` height is causing a stacked duplicate
+
+### Debugging Steps
+- [ ] Inspect the layout using **Android Studio Layout Inspector** on the Record fragment/activity
+- [ ] Search for any `View` with `@color/orange` or similar background that is **not** the primary button
+- [ ] Check if there is a **pulse/ripple animation view** (e.g., `RecordPulseView`, `AnimationView`) that should be `GONE` or clipped but is showing
+- [ ] Verify `z-index` / `elevation` ordering of all children in the Record screen layout XML
+- [ ] Check if the issue is reproducible on all devices or specific screen densities/sizes
+
+### Files to Investigate
+- `fragment_record.xml` (or equivalent layout file)
+- `RecordFragment.kt` / `RecordActivity.kt`
+- Any custom view class related to the record button (e.g., `RecordButton.kt`, `PulseAnimationView.kt`)
+- Button drawable/style definitions in `res/drawable/` or `res/values/styles.xml`
 
 ---
 
-## Step 1 — Get the Crash Log
+## Issue 3: Floating Container / Bottom Sheet Styling Bug
 
-Do this first. Never debug blind.
+### Observed Behavior
+From the second screenshot, the bottom panel (containing the sport selector, GPS status, and record button) appears as a **floating card** that does not extend to the screen edges — it has visible gaps/spacing on the left and right sides, giving it an unintended "floating" look rather than a full-width anchored bottom sheet.
 
-Open a terminal and run:
-```bash
-# Clear old logs
-adb logcat -c
+Additionally:
+- The container appears to have **rounded corners on all four sides**, which is inconsistent with a standard bottom sheet (should only round the **top two corners**)
+- There is visible **margin/padding on the horizontal sides** that separates the card from the screen edges
+- The overall effect suggests the container has been given explicit `margin`, `width` less than `match_parent`, or a `wrap_content` constraint that is shrinking it
 
-# Start capturing crash output
-adb logcat AndroidRuntime:E DOTNET:E System.err:W *:S
-```
+### Likely Root Causes
+- The bottom sheet layout has `android:layout_marginStart` / `android:layout_marginEnd` set unintentionally
+- The root `View` or `CardView` wrapping the panel has a fixed `dp` width instead of `match_parent`
+- A `BottomSheetDialogFragment` is being used with a theme that sets `android:windowBackground` padding or `dialog_sheet_shape` with rounded corners on all sides
+- The `BottomSheetBehavior` `peekHeight` container is wrapped inside a `CardView` with elevation + margin instead of being the sheet itself
+- In `ConstraintLayout`, the sheet might be constrained with `app:layout_constraintWidth_percent` less than 1.0
 
-Open the app, navigate to the Record Page, let it crash, then
-copy everything in the terminal from `FATAL EXCEPTION` down to
-the end of the stack trace and paste it somewhere you can read it.
+### Debugging Steps
+- [ ] Open `fragment_record.xml` (or the bottom sheet layout file) and inspect the **root ViewGroup** — check for any `layout_margin`, `padding`, or fixed `layout_width`
+- [ ] If using `BottomSheetDialogFragment`, check the theme in `res/values/themes.xml` for `bottomSheetStyle` — ensure `android:layout_width` is `match_parent`
+- [ ] If using a `CardView`, replace with a plain `LinearLayout` or `ConstraintLayout` with a custom background drawable that only rounds the top corners:
+  ```xml
+  <!-- res/drawable/bg_bottom_sheet.xml -->
+  <shape xmlns:android="http://schemas.android.com/apk/res/android">
+      <corners android:topLeftRadius="16dp" android:topRightRadius="16dp" />
+      <solid android:color="#FF1F2A3C" />
+  </shape>
+  ```
+- [ ] Ensure the bottom sheet container uses:
+  ```xml
+  android:layout_width="match_parent"
+  android:layout_marginStart="0dp"
+  android:layout_marginEnd="0dp"
+  ```
+- [ ] If `BottomSheetBehavior` is used, confirm the behavior is attached to a view that spans the full width of the `CoordinatorLayout`
 
-This single step will tell you exactly which of the fixes below
-you actually need.
-
----
-
-## Step 2 — Check Android Permissions
-
-This is the most common cause of crashes on Android specifically.
-Missing location permissions cause an immediate unhandled exception
-the moment GPS is accessed.
-
-### AndroidManifest.xml
-Open `Platforms/Android/AndroidManifest.xml` and verify these
-two lines exist inside `<manifest>`:
-
-```xml
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-<uses-permission android:name="android.permission.INTERNET"/>
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-```
-
-If any are missing, add them, then clean and rebuild.
-
-### Runtime Permission Request
-Android 6.0+ requires permissions to be requested at runtime,
-not just declared in the manifest. Verify your GPS code checks
-permission before calling Geolocation:
-
-```csharp
-private async Task StartGpsAsync()
-{
-    // ✅ Check BEFORE calling GetLocationAsync
-    var status = await Permissions
-        .CheckStatusAsync<Permissions.LocationWhenInUse>();
-
-    if (status != PermissionStatus.Granted)
-    {
-        status = await Permissions
-            .RequestAsync<Permissions.LocationWhenInUse>();
-    }
-
-    // If still denied — return safely, do NOT call GPS
-    if (status != PermissionStatus.Granted)
-    {
-        GpsStatusText = "Location permission denied";
-        return;
-    }
-
-    // Safe to call now
-    var location = await Geolocation.GetLocationAsync(
-        new GeolocationRequest
-        {
-            DesiredAccuracy = GeolocationAccuracy.Best,
-            Timeout = TimeSpan.FromSeconds(15)
-        });
-}
-```
+### Files to Investigate
+- `fragment_record.xml` — root container of the bottom panel
+- `res/values/themes.xml` / `res/values/styles.xml` — `bottomSheetStyle`, `shapeAppearanceLargeComponent`
+- `RecordFragment.kt` — check if margins are being set programmatically in `onViewCreated`
 
 ---
 
-## Step 3 — Wrap Every Heavy Call in Try/Catch
+## Issue 2: Page Crash When Run Independently (Stability Bug)
 
-On Android, unhandled exceptions from background tasks
-crash the entire app with no visible error in the UI.
-Wrap the three heaviest operations on the Record Page:
+### Observed Behavior
+The Record screen **crashes when launched standalone** on a physical Android device. This does not appear to be a logic crash but is likely related to **heavy UI rendering or missing initialization context**.
 
-```csharp
-protected override async void OnAppearing()
-{
-    base.OnAppearing();
+### Likely Root Causes
 
-    // Run all three safely — none should be able to crash the app
-    await InitializeMapSafeAsync();
-    await StartGpsSafeAsync();
-}
+#### A. Heavy UI / Memory Pressure
+- The page renders a **live map background** (visible in screenshot) — this is GPU/memory intensive
+- If the map SDK (e.g., Mapbox, Google Maps, OSMDroid) is not properly initialized before the fragment loads, it will crash
+- Large bitmaps or animation assets loaded on the main thread
 
-private async Task InitializeMapSafeAsync()
-{
-    try
-    {
-        await RecordMap.LoadStyleAsync(
-            "mapbox://styles/mapbox/dark-v11");
+#### B. Missing Dependencies When Running Independently
+- The Record screen may rely on a **singleton or application-level object** (e.g., GPS manager, session manager) that is only initialized when the app starts from the Home screen
+- If launched via deep link or directly (e.g., from Android Studio's "Run specific activity"), those singletons are `null` → NullPointerException
 
-        var last = await Geolocation.GetLastKnownLocationAsync();
-        if (last != null)
-            RecordMap.CenterOn(last.Latitude, last.Longitude, zoom: 15);
-    }
-    catch (Exception ex)
-    {
-        System.Diagnostics.Debug.WriteLine(
-            $"[MAP ERROR] {ex.Message}\n{ex.StackTrace}");
+#### C. GPS / Location Service Init
+- `GPS Ready` state shown in UI implies location permissions and services are accessed on launch
+- If `LocationManager` or `FusedLocationProviderClient` is accessed before permission check completes, this can crash
 
-        // Hide map on failure — don't crash
-        RecordMap.IsVisible = false;
-    }
-}
+### Debugging Steps
+- [ ] Run the Record screen independently and capture the **full crash logcat** (`adb logcat -s AndroidRuntime`)
+- [ ] Look for `NullPointerException`, `UninitializedPropertyAccessException`, or `IllegalStateException` in the stack trace
+- [ ] Wrap map initialization in a null-safe check and ensure the Map SDK lifecycle is tied to the fragment lifecycle
+- [ ] Audit all `lateinit var` properties in `RecordFragment`/`RecordViewModel` — add `isInitialized` guards or use lazy initialization
+- [ ] Move heavy initialization (map, GPS, animations) off the main thread using `lifecycleScope.launch(Dispatchers.IO)`
+- [ ] Check `Application.onCreate()` — confirm all required singletons are initialized there and not lazily elsewhere
+- [ ] Add try-catch around the map rendering block as a temporary diagnostic measure
 
-private async Task StartGpsSafeAsync()
-{
-    try
-    {
-        var status = await Permissions
-            .CheckStatusAsync<Permissions.LocationWhenInUse>();
-
-        if (status != PermissionStatus.Granted)
-            status = await Permissions
-                .RequestAsync<Permissions.LocationWhenInUse>();
-
-        if (status != PermissionStatus.Granted)
-        {
-            UpdateGpsUI(ready: false, text: "Permission denied");
-            return;
-        }
-
-        var location = await Geolocation.GetLocationAsync(
-            new GeolocationRequest
-            {
-                DesiredAccuracy = GeolocationAccuracy.Best,
-                Timeout = TimeSpan.FromSeconds(15)
-            });
-
-        // ✅ Always update UI on main thread
-        MainThread.BeginInvokeOnMainThread(() =>
-            UpdateGpsUI(ready: location != null,
-                        text: location != null
-                            ? "GPS Ready"
-                            : "Searching..."));
-    }
-    catch (Exception ex)
-    {
-        System.Diagnostics.Debug.WriteLine(
-            $"[GPS ERROR] {ex.Message}\n{ex.StackTrace}");
-
-        MainThread.BeginInvokeOnMainThread(() =>
-            UpdateGpsUI(ready: false, text: "GPS unavailable"));
-    }
-}
-```
+### Files to Investigate
+- `RecordFragment.kt` / `RecordActivity.kt` — `onViewCreated`, `onResume`, `onStart`
+- `RecordViewModel.kt` — check for unguarded lateinit access
+- `AndroidManifest.xml` — confirm the activity has `android:exported="true"` and correct intent filters if testing via direct launch
+- Application class (e.g., `App.kt`) — verify initialization order
 
 ---
 
-## Step 4 — Fix Thread Violations
+## Priority
 
-Android crashes immediately if you update the UI from a
-background thread. This is silent and hard to spot.
-
-```csharp
-// ❌ Crash — UI update from background thread
-var location = await Geolocation.GetLocationAsync(...);
-GpsLabel.Text = "GPS Ready"; // ← crashes on Android
-
-// ✅ Safe — always wrap UI updates in MainThread
-var location = await Geolocation.GetLocationAsync(...);
-MainThread.BeginInvokeOnMainThread(() =>
-{
-    GpsLabel.Text = "GPS Ready";
-    GpsDot1.Color = Colors.Green;
-    RecordButton.IsEnabled = true;
-});
-```
-
-Search your `RecordPage.xaml.cs` and `RecordViewModel.cs` for
-any property or UI update that happens after an `await` call
-and wrap it in `MainThread.BeginInvokeOnMainThread`.
-
----
-
-## Step 5 — Stagger Heavy Operations on Page Load
-
-Mapbox + GPS loading simultaneously on `OnAppearing` spikes
-memory and CPU on Android. Stagger them with small delays:
-
-```csharp
-protected override async void OnAppearing()
-{
-    base.OnAppearing();
-
-    // Let the page finish rendering first
-    await Task.Delay(150);
-
-    // Then load the map
-    await InitializeMapSafeAsync();
-
-    // Then start GPS after map is up
-    await Task.Delay(100);
-    await StartGpsSafeAsync();
-}
-```
-
----
-
-## Step 6 — Verify ViewModel Is Initialized Before Binding
-
-If `BindingContext` is set after `InitializeComponent`, Android
-can crash during the first binding pass on null properties.
-
-```csharp
-public RecordPage()
-{
-    // ✅ BindingContext BEFORE InitializeComponent
-    BindingContext = new RecordViewModel();
-    InitializeComponent();
-}
-```
-
-And in the ViewModel constructor, initialize everything:
-
-```csharp
-public RecordViewModel()
-{
-    // ✅ Never leave these null
-    Sports = new ObservableCollection<SportItem>();
-    SelectedSport = "Run";
-    GpsStatusText = "Searching...";
-    GpsColor = Colors.Orange;
-    IsRecordButtonEnabled = false;
-
-    LoadSports();
-}
-```
-
----
-
-## Step 7 — Check CollectionView Layout
-
-A `CollectionView` inside a `ScrollView` causes an infinite
-measure loop on Android that eventually crashes the app.
-
-```xml
-<!-- ❌ Never do this on Android -->
-<ScrollView>
-    <StackLayout>
-        <CollectionView ItemsSource="{Binding Sports}"/>
-    </StackLayout>
-</ScrollView>
-
-<!-- ✅ CollectionView must have explicit HeightRequest -->
-<CollectionView ItemsSource="{Binding Sports}"
-                ItemsLayout="HorizontalList"
-                HeightRequest="44"/>
-```
-
----
-
-## Quick Reference — Most Likely Causes by Crash Timing
-
-| When does it crash? | Most likely cause |
-|---|---|
-| Instantly on page open | Missing permissions or null BindingContext |
-| 1–2 seconds after open | GPS permission exception |
-| During map load | Mapbox token invalid or no internet permission |
-| When scrolling sport pills | CollectionView layout issue |
-| Randomly after a few seconds | Thread violation or memory spike |
+| Issue | Severity | Priority |
+|---|---|---|
+| Crash on independent launch | High — blocks QA and development testing | P0 |
+| Mismatched duplicate button | Medium — visual defect, affects UX | P1 |
+| Floating container not full-width | Medium — visual defect, inconsistent UI | P1 |
 
 ---
 
 ## Acceptance Criteria
-
-- [ ] ADB logcat stack trace captured and root cause identified
-- [ ] `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` in manifest
-- [ ] Runtime permission requested before any GPS call
-- [ ] Map init and GPS start both wrapped in try/catch
-- [ ] All UI updates after await calls use `MainThread.BeginInvokeOnMainThread`
-- [ ] `BindingContext` set before `InitializeComponent` in RecordPage
-- [ ] `Sports` collection initialized in ViewModel constructor
-- [ ] No `CollectionView` nested inside `ScrollView`
-- [ ] Record Page loads and runs without crashing on Android device
+- [ ] Record screen launches without crash when started independently on a physical Android device
+- [ ] Only **one** orange record button is visible — no ghost/blur duplicate
+- [ ] GPS initialization and map rendering complete without ANR or memory crash
+- [ ] Layout Inspector shows no unexpected overlapping Views on the Record screen
+- [ ] Bottom sheet container spans **full screen width** with no side margins
+- [ ] Bottom sheet has rounded **top corners only**, flush against screen edges at the bottom

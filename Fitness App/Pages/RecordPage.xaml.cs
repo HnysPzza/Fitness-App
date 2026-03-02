@@ -36,10 +36,16 @@ public partial class RecordPage : ContentPage
     public RecordPage()
     {
         // ✅ Fix Step 6: BindingContext BEFORE InitializeComponent
-        // If set after, Android can crash during the first binding pass on null properties.
+        // Populating the lists BEFORE InitializeComponent guarantees that Android CollectionView
+        // doesn't crash from CollectionChanged events during its first measure pass!
         BindingContext = this;
-        InitializeComponent();
         BuildSportList();
+        InitializeComponent();
+
+        if (_selectedSport != null)
+        {
+            SelectedSportNameLabel.Text = _selectedSport.Name;
+        }
     }
 
     // ── Sport list ───────────────────────────────────────────────────────────
@@ -132,14 +138,27 @@ public partial class RecordPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        ApplyBottomSafeArea();
-        AnimateLocationPulse();
 
-        // Let the page finish its first layout pass before starting heavy work
-        await Task.Delay(150);
+        try
+        {
+            ApplyBottomSafeArea();
 
-        // Start GPS (with permission check + try/catch)
-        await StartGpsSafeAsync();
+            // Let the page finish its first layout pass before starting heavy work.
+            // AnimateLocationPulse MUST start AFTER this delay — calling ScaleToAsync
+            // on elements that haven't been measured yet crashes Android.
+            await Task.Delay(200);
+
+            // Now safe to animate (elements are laid out)
+            AnimateLocationPulse();
+
+            // Start GPS (with permission check + try/catch)
+            await StartGpsSafeAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[RecordPage.OnAppearing ERROR] {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     /// <summary>
@@ -167,7 +186,7 @@ public partial class RecordPage : ContentPage
             var context = Android.App.Application.Context;
             var resId = context.Resources?.GetIdentifier(
                 "navigation_bar_height", "dimen", "android") ?? 0;
-            if (resId > 0)
+            if (resId > 0 && density > 0)
                 safeAreaBottom = (context.Resources!.GetDimensionPixelSize(resId) / density);
             else
                 safeAreaBottom = 16; // gesture-nav fallback
@@ -285,16 +304,24 @@ public partial class RecordPage : ContentPage
             try
             {
                 await PulseRing1.ScaleToAsync(1.5, 1000, Easing.CubicOut);
-                PulseRing1.Opacity = 0;
+                MainThread.BeginInvokeOnMainThread(() => PulseRing1.Opacity = 0);
+                
                 await Task.Delay(200);
-                PulseRing1.Scale = 1;
-                PulseRing1.Opacity = 0.6;
+                MainThread.BeginInvokeOnMainThread(() => 
+                {
+                    PulseRing1.Scale = 1;
+                    PulseRing1.Opacity = 0.6;
+                });
 
                 await PulseRing2.ScaleToAsync(1.8, 1400, Easing.CubicOut);
-                PulseRing2.Opacity = 0;
+                MainThread.BeginInvokeOnMainThread(() => PulseRing2.Opacity = 0);
+                
                 await Task.Delay(100);
-                PulseRing2.Scale = 1;
-                PulseRing2.Opacity = 0.4;
+                MainThread.BeginInvokeOnMainThread(() => 
+                {
+                    PulseRing2.Scale = 1;
+                    PulseRing2.Opacity = 0.4;
+                });
             }
             catch
             {
@@ -310,7 +337,10 @@ public partial class RecordPage : ContentPage
         foreach (var s in _allSports) s.IsSelected = false;
         sport.IsSelected = true;
         _selectedSport = sport;
-        SelectedSportNameLabel.Text = sport.Name;
+
+        if (SelectedSportNameLabel != null)
+            SelectedSportNameLabel.Text = sport.Name;
+
         Preferences.Default.Set("last_selected_sport", sport.Name);
 
         OnPropertyChanged(nameof(RecentSports));
@@ -398,6 +428,39 @@ public partial class RecordPage : ContentPage
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
                 BottomSheet.TranslateTo(0, 0, 200, Easing.SpringOut);
+                break;
+        }
+    }
+
+    // ── Pan gesture on expanded sheet (drag to close) ────────────────────────
+    private double _expandedSheetStartY;
+    private void OnExpandedSheetPanUpdated(object sender, PanUpdatedEventArgs e)
+    {
+        switch (e.StatusType)
+        {
+            case GestureStatus.Started:
+                _expandedSheetStartY = ExpandedSheet.TranslationY;
+                break;
+            case GestureStatus.Running:
+                // Only allow dragging down (positive Y)
+                var newY = _expandedSheetStartY + e.TotalY;
+                if (newY > 0)
+                {
+                    ExpandedSheet.TranslationY = newY;
+                }
+                break;
+            case GestureStatus.Completed:
+            case GestureStatus.Canceled:
+                // If dragged down past the threshold (150px), close it completely
+                if (ExpandedSheet.TranslationY > 150)
+                {
+                    CollapseExpandedSheet();
+                }
+                else
+                {
+                    // Snap back to top
+                    ExpandedSheet.TranslateTo(0, 0, 200, Easing.SpringOut);
+                }
                 break;
         }
     }

@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:Fitness_App"
+    xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
     xmlns:pages="clr-namespace:Fitness_App.Pages"
     Title="Fitness_App">
 
@@ -13,7 +14,7 @@
             Route="home"
             ContentTemplate="{DataTemplate pages:HomePage}">
             <ShellContent.Icon>
-                <FontImageSource FontFamily="MaterialSymbols" Glyph="home" Size="24" />
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="{x:Static icons:MaterialSymbols.Home}" Size="24" />
             </ShellContent.Icon>
         </ShellContent>
 
@@ -22,7 +23,7 @@
             Route="maps"
             ContentTemplate="{DataTemplate pages:MapsPage}">
             <ShellContent.Icon>
-                <FontImageSource FontFamily="MaterialSymbols" Glyph="map" Size="24" />
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="{x:Static icons:MaterialSymbols.Map}" Size="24" />
             </ShellContent.Icon>
         </ShellContent>
 
@@ -31,7 +32,7 @@
             Route="record"
             ContentTemplate="{DataTemplate pages:RecordPage}">
             <ShellContent.Icon>
-                <FontImageSource FontFamily="MaterialSymbols" Glyph="play_circle" Size="24" />
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="{x:Static icons:MaterialSymbols.Play_circle}" Size="24" />
             </ShellContent.Icon>
         </ShellContent>
 
@@ -40,7 +41,7 @@
             Route="you"
             ContentTemplate="{DataTemplate pages:YouPage}">
             <ShellContent.Icon>
-                <FontImageSource FontFamily="MaterialSymbols" Glyph="person" Size="24" />
+                <FontImageSource FontFamily="MaterialSymbols" Glyph="{x:Static icons:MaterialSymbols.Person}" Size="24" />
             </ShellContent.Icon>
         </ShellContent>
     </TabBar>

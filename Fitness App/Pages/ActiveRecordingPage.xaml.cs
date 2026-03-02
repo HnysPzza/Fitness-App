@@ -12,19 +12,23 @@ public partial class ActiveRecordingPage : ContentPage
         get => _sportType;
         set
         {
-            _sportType = value;
-            SportNameLabel.Text = _sportType;
+            // ✅ Store in backing field ONLY — do NOT touch UI elements here.
+            // QueryProperty setters fire during Shell navigation BEFORE
+            // InitializeComponent() completes. Accessing named XAML elements
+            // (SportNameLabel, SportIcon) here causes a NullReferenceException
+            // that the VS debugger silently swallows but crashes standalone runs.
+            _sportType = Uri.UnescapeDataString(value ?? "Running");
         }
     }
 
-    private string _sportIconValue = "\ue566"; // default directions_run
+    private string _sportIconValue = "🏃";
     public string SportIconValue
     {
         get => _sportIconValue;
         set
         {
-            _sportIconValue = value;
-            SportIcon.Text = _sportIconValue;
+            // Same reason — back-field only, apply in OnAppearing
+            _sportIconValue = Uri.UnescapeDataString(value ?? "🏃");
         }
     }
 
@@ -41,6 +45,11 @@ public partial class ActiveRecordingPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+
+        // ✅ Apply query property values NOW — XAML elements are fully inflated
+        SportNameLabel.Text = _sportType;
+        SportIcon.Text = _sportIconValue;
+
         StartRecording();
     }
 

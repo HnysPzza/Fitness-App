@@ -138,8 +138,9 @@
                 AbsoluteLayout.LayoutBounds="0,1,1,-1"
                 AbsoluteLayout.LayoutFlags="WidthProportional,YProportional"
                 BackgroundColor="#F21C1C2E"
+                Stroke="Transparent"
                 StrokeThickness="0"
-                Margin="0,0,0,56"
+                Margin="0"
                 IsClippedToBounds="True">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="24,24,0,0" />
@@ -225,41 +226,51 @@
                 </HorizontalStackLayout>
 
                 <!-- ─── Record Button ─── -->
-                <!-- Glow ring (shown when GPS ready) -->
-                <Ellipse x:Name="RecordButtonGlow"
-                         WidthRequest="96" HeightRequest="96"
-                         HorizontalOptions="Center"
-                         Opacity="0" Margin="0,-8,0,-8">
-                    <Ellipse.Fill>
-                        <RadialGradientBrush>
-                            <GradientStop Color="#99FC4C02" Offset="0.3"/>
-                            <GradientStop Color="#00FC4C02" Offset="1.0"/>
-                        </RadialGradientBrush>
-                    </Ellipse.Fill>
-                </Ellipse>
+                <!-- Grid layers: [0] glow behind, [1] button on top -->
+                <Grid HorizontalOptions="Center"
+                      WidthRequest="96" HeightRequest="96"
+                      Margin="0,8,0,0">
 
-                <Border x:Name="RecordButton"
-                        WidthRequest="80" HeightRequest="80"
-                        HorizontalOptions="Center"
-                        StrokeThickness="0"
-                        BackgroundColor="#3A3A4E"
-                        Opacity="0.6"
-                        Margin="0,8,0,0"
-                        IsClippedToBounds="True">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="40" />
-                    </Border.StrokeShape>
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer x:Name="RecordTapGesture" Tapped="OnRecordTapped" />
-                    </Border.GestureRecognizers>
-                    <Label Text="▶" FontSize="30" FontAttributes="Bold"
-                           TextColor="#88FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
-                </Border>
+                    <!-- Glow ring (shown when GPS ready) — renders BEHIND button -->
+                    <Ellipse x:Name="RecordButtonGlow"
+                             WidthRequest="96" HeightRequest="96"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center"
+                             Opacity="0">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#99FC4C02" Offset="0.3"/>
+                                <GradientStop Color="#00FC4C02" Offset="1.0"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <!-- Actual record button — renders ON TOP of glow -->
+                    <Border x:Name="RecordButton"
+                            WidthRequest="80" HeightRequest="80"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            Stroke="Transparent"
+                            StrokeThickness="0"
+                            BackgroundColor="#3A3A4E"
+                            Opacity="0.6"
+                            IsClippedToBounds="True">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="40" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer x:Name="RecordTapGesture" Tapped="OnRecordTapped" />
+                        </Border.GestureRecognizers>
+                        <Label Text="▶" FontSize="30" FontAttributes="Bold"
+                               TextColor="#88FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                </Grid>
 
                 <!-- ✅ KEY FIX — Transparent spacer above tab bar + safe area -->
                 <!-- HeightRequest set at runtime in code-behind for per-device accuracy -->
                 <BoxView x:Name="BottomSheetSpacer"
                          Color="Transparent"
+                         BackgroundColor="Transparent"
                          HeightRequest="{OnPlatform iOS=34, Android=16}" />
 
             </VerticalStackLayout>
@@ -273,11 +284,15 @@
                 AbsoluteLayout.LayoutBounds="0,1,1,0.65"
                 AbsoluteLayout.LayoutFlags="WidthProportional,HeightProportional,YProportional"
                 BackgroundColor="#F21C1C2E"
+                Stroke="Transparent"
                 StrokeThickness="0"
                 IsVisible="False">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="24,24,0,0" />
             </Border.StrokeShape>
+            <Border.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnExpandedSheetPanUpdated" />
+            </Border.GestureRecognizers>
 
             <Grid RowDefinitions="Auto, Auto, *" Padding="20,12,20,20">
 
