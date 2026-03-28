@@ -6,34 +6,25 @@ namespace Fitness_App.Pages;
 [QueryProperty(nameof(SportIconValue), "sportIcon")]
 public partial class ActiveRecordingPage : ContentPage
 {
+    // ── Query properties (set by Shell navigation) ───────────────────────────
     private string _sportType = "Running";
     public string SportType
     {
         get => _sportType;
-        set
-        {
-            // ✅ Store in backing field ONLY — do NOT touch UI elements here.
-            // QueryProperty setters fire during Shell navigation BEFORE
-            // InitializeComponent() completes. Accessing named XAML elements
-            // (SportNameLabel, SportIcon) here causes a NullReferenceException
-            // that the VS debugger silently swallows but crashes standalone runs.
-            _sportType = Uri.UnescapeDataString(value ?? "Running");
-        }
+        set => _sportType = Uri.UnescapeDataString(value ?? "Running");
     }
 
     private string _sportIconValue = "🏃";
     public string SportIconValue
     {
         get => _sportIconValue;
-        set
-        {
-            // Same reason — back-field only, apply in OnAppearing
-            _sportIconValue = Uri.UnescapeDataString(value ?? "🏃");
-        }
+        set => _sportIconValue = Uri.UnescapeDataString(value ?? "🏃");
     }
 
-    private bool _isPaused = false;
-    private Stopwatch _stopwatch = new();
+    // ── Recording state ───────────────────────────────────────────────────────
+    private bool _isPaused            = false;
+    private bool _isShowingFinish     = false;
+    private readonly Stopwatch _stopwatch  = new();
     private System.Timers.Timer? _updateTimer;
     private double _distance = 0.0;
 
@@ -42,27 +33,41 @@ public partial class ActiveRecordingPage : ContentPage
         InitializeComponent();
     }
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected override void OnAppearing()
     {
         base.OnAppearing();
 
-        // ✅ Apply query property values NOW — XAML elements are fully inflated
-        SportNameLabel.Text = _sportType;
-        SportIcon.Text = _sportIconValue;
+        // Apply query property values now — elements are fully inflated
+        SportNameLabel.Text  = _sportType;
+        SportIcon.Text       = _sportIconValue;
 
         StartRecording();
     }
 
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        StopTimers();
+    }
+
+    // ── Timer / stats ─────────────────────────────────────────────────────────
     private void StartRecording()
     {
-        _stopwatch.Start();
+        _stopwatch.Restart();
+        _distance = 0.0;
 
         _updateTimer = new System.Timers.Timer(1000);
-        _updateTimer.Elapsed += (s, e) =>
-        {
-            MainThread.BeginInvokeOnMainThread(UpdateStats);
-        };
+        _updateTimer.Elapsed += (_, _) => MainThread.BeginInvokeOnMainThread(UpdateStats);
         _updateTimer.Start();
+    }
+
+    private void StopTimers()
+    {
+        _stopwatch.Stop();
+        _updateTimer?.Stop();
+        _updateTimer?.Dispose();
+        _updateTimer = null;
     }
 
     private void UpdateStats()
@@ -70,17 +75,14 @@ public partial class ActiveRecordingPage : ContentPage
         if (_isPaused) return;
 
         var elapsed = _stopwatch.Elapsed;
-        TimerLabel.Text = $"{elapsed.Hours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-
-        // Simulating values based on a standard 6 min/km pace
-        // 1 km = 6 mins (360s) -> distance per second = 1/360 km
-        _distance += 1.0 / 360.0;
+        TimerLabel.Text   = $"{elapsed.Hours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+        _distance        += 1.0 / 360.0; // simulated 6 min/km pace
         DistanceLabel.Text = $"{_distance:F2} km";
-
-        PaceLabel.Text = "6:00 /km";
-        HrLabel.Text = "142 bpm";
+        PaceLabel.Text     = "6:00 /km";
+        HrLabel.Text       = "142 bpm";
     }
 
+    // ── Pause / Resume ────────────────────────────────────────────────────────
     private async void OnPauseResumeClicked(object sender, EventArgs e)
     {
         try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
@@ -90,42 +92,118 @@ public partial class ActiveRecordingPage : ContentPage
         if (_isPaused)
         {
             _stopwatch.Stop();
-            PauseResumeButton.Text = "▶ Resume";
+            PauseResumeButton.Text            = "▶  Resume";
             PauseResumeButton.BackgroundColor = Color.FromArgb("#10B981");
         }
         else
         {
             _stopwatch.Start();
-            PauseResumeButton.Text = "⏸ Pause";
+            PauseResumeButton.Text            = "⏸  Pause";
             PauseResumeButton.BackgroundColor = Color.FromArgb("#F59E0B");
         }
+
+        await Task.CompletedTask;
     }
 
+    // ── Finish button ─────────────────────────────────────────────────────────
     private async void OnFinishClicked(object sender, EventArgs e)
     {
+        if (_isShowingFinish) return;
+
         try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
 
-        var result = await DisplayAlert(
-            "Finish Activity",
-            "Are you sure you want to finish and save this session?",
-            "Finish",
-            "Cancel");
+        // Snapshot current stats into the confirm sheet before it animates in
+        var elapsed = _stopwatch.Elapsed;
+        FinishTimeLabel.Text     = $"{elapsed.Hours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+        FinishDistanceLabel.Text = $"{_distance:F2} km";
 
-        if (!result) return;
+        await ShowFinishSheetAsync();
+    }
 
-        _stopwatch.Stop();
-        _updateTimer?.Stop();
-        _updateTimer?.Dispose();
+    // ── Keep recording (dismiss sheet) ───────────────────────────────────────
+    private async void OnKeepRecordingClicked(object sender, EventArgs e)
+        => await HideFinishSheetAsync();
 
-        await DisplayAlert("Activity Saved! 🎉", "Great job! Your activity has been logged.", "OK");
+    private async void OnFinishBackdropTapped(object sender, TappedEventArgs e)
+        => await HideFinishSheetAsync();
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+    private async void OnSaveActivityClicked(object sender, EventArgs e)
+    {
+        // Stop timers so elapsed is frozen
+        StopTimers();
+
+        // Snapshot into the "saved" sheet
+        SavedSportLabel.Text   = _sportType;
+        SavedTimeLabel.Text    = FinishTimeLabel.Text;
+        SavedDistanceLabel.Text = FinishDistanceLabel.Text;
+
+        // Close confirm, open saved — both within the page (no DisplayAlert!)
+        await HideFinishSheetAsync();
+        await ShowSavedSheetAsync();
+    }
+
+    // ── Done (after save) ─────────────────────────────────────────────────────
+    private async void OnDoneClicked(object sender, EventArgs e)
+    {
+        await HideSavedSheetAsync();
         await Shell.Current.GoToAsync("..");
     }
 
-    protected override void OnDisappearing()
+    // ── Sheet helpers ─────────────────────────────────────────────────────────
+    private async Task ShowFinishSheetAsync()
     {
-        base.OnDisappearing();
-        _stopwatch.Stop();
-        _updateTimer?.Stop();
-        _updateTimer?.Dispose();
+        _isShowingFinish = true;
+
+        // Show backdrop first with a solid dark colour so the background never
+        // shows as gray — the backdrop itself IS the background during transition
+        FinishBackdrop.InputTransparent = false;
+        FinishBackdrop.IsVisible        = true;
+
+        FinishConfirmSheet.TranslationY = 600;
+        FinishConfirmSheet.IsVisible    = true;
+
+        // Give MAUI one frame to measure the sheet before animating
+        await Task.Delay(16);
+
+        var anim = FinishConfirmSheet.TranslateTo(0, 0, 280, Easing.CubicOut);
+        await Task.WhenAny(anim, Task.Delay(400));
+        FinishConfirmSheet.TranslationY = 0; // guarantee visible
+    }
+
+    private async Task HideFinishSheetAsync()
+    {
+        var anim = FinishConfirmSheet.TranslateTo(0, 600, 240, Easing.CubicIn);
+        await Task.WhenAny(anim, Task.Delay(350));
+
+        FinishConfirmSheet.IsVisible    = false;
+        FinishBackdrop.IsVisible        = false;
+        FinishBackdrop.InputTransparent = true;
+        _isShowingFinish = false;
+    }
+
+    private async Task ShowSavedSheetAsync()
+    {
+        SavedBackdrop.InputTransparent = false;
+        SavedBackdrop.IsVisible        = true;
+
+        SavedSheet.TranslationY = 600;
+        SavedSheet.IsVisible    = true;
+
+        await Task.Delay(16);
+
+        var anim = SavedSheet.TranslateTo(0, 0, 280, Easing.CubicOut);
+        await Task.WhenAny(anim, Task.Delay(400));
+        SavedSheet.TranslationY = 0;
+    }
+
+    private async Task HideSavedSheetAsync()
+    {
+        var anim = SavedSheet.TranslateTo(0, 600, 240, Easing.CubicIn);
+        await Task.WhenAny(anim, Task.Delay(350));
+
+        SavedSheet.IsVisible        = false;
+        SavedBackdrop.IsVisible     = false;
+        SavedBackdrop.InputTransparent = true;
     }
 }

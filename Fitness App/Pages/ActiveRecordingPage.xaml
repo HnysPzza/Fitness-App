@@ -6,65 +6,232 @@
              x:Class="Fitness_App.Pages.ActiveRecordingPage"
              NavigationPage.HasNavigationBar="False"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="#111111">
+             BackgroundColor="#0F1923">
 
-    <Grid RowDefinitions="*, Auto, Auto">
-        <!-- Map Background (Fullscreen) -->
-        <Grid Grid.Row="0" Grid.RowSpan="3" BackgroundColor="#111111">
-            <!-- Simulated Map Polyline / Route -->
-            <Path Stroke="#FC4C02" StrokeThickness="4" Opacity="0.7">
-                <Path.Data>
-                    <PathGeometry>
-                        <PathFigure StartPoint="100,200">
-                            <LineSegment Point="150,150" />
-                            <LineSegment Point="200,180" />
-                            <LineSegment Point="250,120" />
-                        </PathFigure>
-                    </PathGeometry>
-                </Path.Data>
-            </Path>
-            
-            <!-- User Location -->
-            <Ellipse WidthRequest="20" HeightRequest="20" Fill="#2563EB" 
-                     HorizontalOptions="Center" VerticalOptions="Center" TranslationX="50" TranslationY="-80"/>
-            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Arrow_upward}" 
-                               TextColor="White" FontSize="12"
-                               HorizontalOptions="Center" VerticalOptions="Center" 
-                               TranslationX="50" TranslationY="-80"/>
-            
-            <!-- Top Bar -->
-            <Grid VerticalOptions="Start" Padding="20,40,20,0" ColumnDefinitions="Auto, *, Auto">
-                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                    <controls:IconLabel x:Name="SportIcon" Text="{x:Static icons:MaterialSymbols.Directions_run}" TextColor="White" FontSize="24" />
-                    <Label x:Name="SportNameLabel" Text="Running" FontSize="18" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" />
-                </HorizontalStackLayout>
-                
-                <Label x:Name="TimerLabel" Grid.Column="2" Text="00:00:00" FontSize="22" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" />
+    <!-- Root absolute layer stack -->
+    <Grid>
+
+        <!-- ═══ LAYER 1: Map / dark background (fullscreen) ═══ -->
+        <Grid RowDefinitions="*, Auto, Auto">
+
+            <!-- Dark map placeholder background -->
+            <Grid Grid.Row="0" Grid.RowSpan="3" BackgroundColor="#0F1923">
+
+                <!-- GPS route visual (decorative) -->
+                <Path Stroke="#FC4C02" StrokeThickness="4" Opacity="0.7">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="100,200">
+                                <LineSegment Point="150,150" />
+                                <LineSegment Point="200,180" />
+                                <LineSegment Point="250,120" />
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
+
+                <!-- User location dot -->
+                <Ellipse WidthRequest="20" HeightRequest="20" Fill="#2563EB"
+                         HorizontalOptions="Center" VerticalOptions="Center"
+                         TranslationX="50" TranslationY="-80"/>
+
+                <!-- Top bar: sport + timer -->
+                <Grid VerticalOptions="Start" Padding="20,44,20,0"
+                      ColumnDefinitions="Auto, *, Auto">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Label x:Name="SportIcon" Text="🏃" FontSize="22"
+                               VerticalOptions="Center" />
+                        <Label x:Name="SportNameLabel" Text="Running"
+                               FontSize="18" FontAttributes="Bold"
+                               TextColor="White" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="TimerLabel" Grid.Column="2"
+                           Text="00:00:00" FontSize="22" FontAttributes="Bold"
+                           TextColor="White" VerticalOptions="Center" />
+                </Grid>
+            </Grid>
+
+            <!-- Stats bar -->
+            <Border Grid.Row="1" BackgroundColor="#CC111827"
+                    StrokeThickness="0" Margin="16,0,16,12">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="*, *, *" Padding="16,12"
+                      RowDefinitions="Auto, Auto">
+                    <Label Grid.Row="0" Grid.Column="0" Text="DISTANCE"
+                           FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                    <Label Grid.Row="0" Grid.Column="1" Text="PACE"
+                           FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                    <Label Grid.Row="0" Grid.Column="2" Text="HR"
+                           FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
+                    <Label x:Name="DistanceLabel" Grid.Row="1" Grid.Column="0"
+                           Text="0.00 km" FontSize="20" FontAttributes="Bold"
+                           TextColor="White" HorizontalOptions="Center" />
+                    <Label x:Name="PaceLabel" Grid.Row="1" Grid.Column="1"
+                           Text="--:--" FontSize="20" FontAttributes="Bold"
+                           TextColor="White" HorizontalOptions="Center" />
+                    <Label x:Name="HrLabel" Grid.Row="1" Grid.Column="2"
+                           Text="-- bpm" FontSize="20" FontAttributes="Bold"
+                           TextColor="White" HorizontalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Control buttons -->
+            <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="14"
+                  Padding="20,8,20,36" BackgroundColor="#0F1923">
+                <Button x:Name="PauseResumeButton"
+                        Text="⏸  Pause"
+                        Clicked="OnPauseResumeClicked"
+                        BackgroundColor="#F59E0B" TextColor="White"
+                        FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
+                <Button Grid.Column="1"
+                        Text="⏹  Finish"
+                        Clicked="OnFinishClicked"
+                        BackgroundColor="#FC4C02" TextColor="White"
+                        FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
             </Grid>
         </Grid>
 
-        <!-- Stats Bar -->
-        <Border Grid.Row="1" BackgroundColor="#1A1A2ECC" StrokeThickness="0" Margin="16,0,16,16">
+        <!-- ═══ LAYER 2: Finish Confirm Sheet (no DisplayAlert!) ═══ -->
+
+        <!-- Full-screen dark backdrop — blocks the map so it stays dark and
+             doesn't go gray when the sheet animates in -->
+        <BoxView x:Name="FinishBackdrop"
+                 Color="#E00F1923"
+                 IsVisible="False"
+                 InputTransparent="True"
+                 VerticalOptions="Fill"
+                 HorizontalOptions="Fill">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnFinishBackdropTapped" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <!-- Confirm sheet -->
+        <Border x:Name="FinishConfirmSheet"
+                BackgroundColor="#1E2A3A"
+                StrokeThickness="1"
+                Stroke="#334155"
+                VerticalOptions="End"
+                IsVisible="False"
+                TranslationY="600"
+                Padding="22,18,22,40"
+                Margin="10,0,10,0">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="16" />
+                <RoundRectangle CornerRadius="28" />
             </Border.StrokeShape>
-            <Grid ColumnDefinitions="*, *, *" Padding="16" RowDefinitions="Auto, Auto">
-                <!-- Row 0: Labels -->
-                <Label Grid.Row="0" Grid.Column="0" Text="DISTANCE" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
-                <Label Grid.Row="0" Grid.Column="1" Text="PACE" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
-                <Label Grid.Row="0" Grid.Column="2" Text="HR" FontSize="11" TextColor="#94A3B8" HorizontalOptions="Center" />
-                
-                <!-- Row 1: Values -->
-                <Label x:Name="DistanceLabel" Grid.Row="1" Grid.Column="0" Text="0.00 km" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-                <Label x:Name="PaceLabel" Grid.Row="1" Grid.Column="1" Text="--:--" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-                <Label x:Name="HrLabel" Grid.Row="1" Grid.Column="2" Text="-- bpm" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-            </Grid>
+            <Border.Shadow>
+                <Shadow Brush="#80000000" Offset="0,10" Radius="30" Opacity="0.5" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="16">
+                <!-- Drag handle -->
+                <BoxView HeightRequest="4" WidthRequest="40" CornerRadius="2"
+                         Color="#475569" HorizontalOptions="Center" />
+
+                <Label Text="Finish workout?"
+                       TextColor="White" FontSize="22" FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+
+                <Label Text="Your time and distance will be saved to your activity history."
+                       TextColor="#94A3B8" FontSize="13"
+                       HorizontalTextAlignment="Center" />
+
+                <!-- Live snapshot stats -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,4,0,0">
+                    <Border BackgroundColor="#111827" StrokeThickness="0" Padding="14,12">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Time" TextColor="#94A3B8" FontSize="11" HorizontalOptions="Center" />
+                            <Label x:Name="FinishTimeLabel" Text="00:00:00"
+                                   TextColor="White" FontSize="18" FontAttributes="Bold"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="#111827" StrokeThickness="0" Padding="14,12">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Distance" TextColor="#94A3B8" FontSize="11" HorizontalOptions="Center" />
+                            <Label x:Name="FinishDistanceLabel" Text="0.00 km"
+                                   TextColor="White" FontSize="18" FontAttributes="Bold"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Action buttons -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,4,0,0">
+                    <Button Text="Keep recording"
+                            Clicked="OnKeepRecordingClicked"
+                            BackgroundColor="#1F2937" TextColor="#E2E8F0"
+                            CornerRadius="16" HeightRequest="50" FontAttributes="Bold" />
+                    <Button Grid.Column="1"
+                            Text="Save activity"
+                            Clicked="OnSaveActivityClicked"
+                            BackgroundColor="#FC4C02" TextColor="White"
+                            CornerRadius="16" HeightRequest="50" FontAttributes="Bold" />
+                </Grid>
+            </VerticalStackLayout>
         </Border>
 
-        <!-- Controls Bar -->
-        <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="16" Padding="24,16,24,32" BackgroundColor="#1A1A2E">
-            <Button x:Name="PauseResumeButton" Text="⏸ Pause" Clicked="OnPauseResumeClicked" BackgroundColor="#F59E0B" TextColor="White" FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
-            <Button Grid.Column="1" Text="⏹ Finish" Clicked="OnFinishClicked" BackgroundColor="#FC4C02" TextColor="White" FontAttributes="Bold" CornerRadius="28" HeightRequest="56" />
-        </Grid>
+        <!-- ═══ LAYER 3: Saved confirmation sheet ═══ -->
+        <BoxView x:Name="SavedBackdrop"
+                 Color="#E00F1923"
+                 IsVisible="False"
+                 InputTransparent="True"
+                 VerticalOptions="Fill"
+                 HorizontalOptions="Fill" />
+
+        <Border x:Name="SavedSheet"
+                BackgroundColor="#1E2A3A"
+                StrokeThickness="1"
+                Stroke="#334155"
+                VerticalOptions="End"
+                IsVisible="False"
+                TranslationY="600"
+                Padding="22,18,22,40"
+                Margin="10,0,10,0">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="28" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#80000000" Offset="0,10" Radius="30" Opacity="0.5" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                <Label Text="🎉" FontSize="48" HorizontalOptions="Center" />
+                <Label Text="Activity Saved!"
+                       TextColor="White" FontSize="22" FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+                <Label x:Name="SavedSportLabel" Text="Run"
+                       TextColor="#FC4C02" FontSize="14" FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border BackgroundColor="#111827" StrokeThickness="0" Padding="14,12">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Time" TextColor="#94A3B8" FontSize="11" HorizontalOptions="Center" />
+                            <Label x:Name="SavedTimeLabel" Text="00:00:00"
+                                   TextColor="White" FontSize="18" FontAttributes="Bold"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="#111827" StrokeThickness="0" Padding="14,12">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Distance" TextColor="#94A3B8" FontSize="11" HorizontalOptions="Center" />
+                            <Label x:Name="SavedDistanceLabel" Text="0.00 km"
+                                   TextColor="White" FontSize="18" FontAttributes="Bold"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+                <Button Text="Done"
+                        Clicked="OnDoneClicked"
+                        BackgroundColor="#FC4C02" TextColor="White"
+                        CornerRadius="16" HeightRequest="50"
+                        FontAttributes="Bold" Margin="0,4,0,0" />
+            </VerticalStackLayout>
+        </Border>
+
     </Grid>
 </ContentPage>
