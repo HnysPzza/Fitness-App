@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:vm="clr-namespace:Fitness_App.ViewModels"
+             x:Class="Fitness_App.Pages.EmailVerificationPage"
+             x:DataType="vm:EmailVerificationViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="28,0" Spacing="0"
+                             VerticalOptions="Center"
+                             MinimumHeightRequest="600">
+
+            <!-- ICON -->
+            <Border HeightRequest="72" WidthRequest="72" StrokeThickness="0"
+                    HorizontalOptions="Center" Margin="0,48,0,24">
+                <Border.StrokeShape><RoundRectangle CornerRadius="36" /></Border.StrokeShape>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FC5200" Offset="0" />
+                        <GradientStop Color="#FF8C42" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Email}"
+                                   FontSize="32" TextColor="White"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+            </Border>
+
+            <!-- HEADING -->
+            <Label Text="Verify your email" FontSize="24" FontAttributes="Bold"
+                   HorizontalOptions="Center" Margin="0,0,0,8"
+                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+            <Label HorizontalOptions="Center" Margin="0,0,0,36"
+                   FontSize="14" Opacity="0.65"
+                   TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="We sent a 6-digit code to " />
+                        <Span Text="{Binding MaskedEmail}" FontAttributes="Bold"
+                              TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+
+            <!-- 6-DIGIT OTP BOXES -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10" Margin="0,0,0,28">
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box1" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit1}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box2" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit2}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box3" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit3}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box4" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit4}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box5" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit5}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Border StrokeThickness="1.5" HeightRequest="56" WidthRequest="48"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry x:Name="Box6" MaxLength="1" Keyboard="Numeric" FontSize="22"
+                           FontAttributes="Bold" HorizontalTextAlignment="Center"
+                           VerticalOptions="Center" Text="{Binding Digit6}"
+                           TextChanged="OnDigitTextChanged"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+            </HorizontalStackLayout>
+
+            <!-- ERROR -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}"
+                    StrokeThickness="0" BackgroundColor="#1AEF4444" Padding="14,10" Margin="0,0,0,16">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <HorizontalStackLayout Spacing="10">
+                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Warning}"
+                                       FontSize="18" TextColor="#EF4444" VerticalOptions="Center" />
+                    <Label Text="{Binding ErrorMessage}" FontSize="13" TextColor="#EF4444"
+                           VerticalOptions="Center" LineBreakMode="WordWrap"
+                           HorizontalOptions="FillAndExpand" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- VERIFY BUTTON -->
+            <Grid Margin="0,4,0,24">
+                <Button Text="Verify" FontSize="17" FontAttributes="Bold"
+                        TextColor="White" HeightRequest="56" CornerRadius="16"
+                        Command="{Binding VerifyCommand}"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FC5200" Offset="0" />
+                            <GradientStop Color="#FF6B35" Offset="1" />
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Button.Shadow>
+                        <Shadow Brush="#FC5200" Radius="25" Opacity="0.4" Offset="0,8" />
+                    </Button.Shadow>
+                </Button>
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="White" HeightRequest="28" WidthRequest="28"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
+
+            <!-- RESEND -->
+            <Label HorizontalOptions="Center" Margin="0,0,0,40"
+                   FontSize="14" Text="{Binding ResendText}"
+                   TextColor="#FC5200">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding CanResend}" Value="True">
+                        <Setter Property="TextColor" Value="#FC5200" />
+                        <Setter Property="FontAttributes" Value="Bold" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding CanResend}" Value="False">
+                        <Setter Property="TextColor" Value="#94A3B8" />
+                        <Setter Property="FontAttributes" Value="None" />
+                    </DataTrigger>
+                </Label.Triggers>
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ResendCodeCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

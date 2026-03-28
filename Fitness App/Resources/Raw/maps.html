@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!--MAPBOX_BUNDLE-->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Pulsing user marker */
+        .user-marker {
+            width: 20px;
+            height: 20px;
+            background-color: #2196F3;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(33, 150, 243, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+            }
+        }
+
+        /* Suggested pin — no CSS transform on children (avoids fighting Mapbox projection). Subtle opacity pulse only. */
+        .suggested-pin-wrap {
+            width: 44px;
+            height: 52px;
+            pointer-events: none;
+        }
+
+        .suggested-pin-inner {
+            width: 100%;
+            height: 100%;
+            animation: suggested-pin-pulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes suggested-pin-pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.82;
+            }
+        }
+
+        .suggested-pin-svg {
+            display: block;
+            width: 44px;
+            height: 52px;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        // Token is embedded at load time by C# code-behind
+        mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/__START_STYLE__', // __START_STYLE__ is injected by C# (e.g., dark-v11)
+            center: [__START_LNG__, __START_LAT__], // start location injected by C#
+            zoom: 13,
+            attributionControl: false,
+            logoPosition: 'bottom-left',
+            fadeDuration: 0
+        });
+
+        // Pulsing user location marker
+        var markerEl = document.createElement('div');
+        markerEl.className = 'user-marker';
+
+        var userMarker = new mapboxgl.Marker({ element: markerEl, anchor: 'center' })
+            .setLngLat([__START_LNG__, __START_LAT__])
+            .addTo(map);
+
+        map.on('load', () => {
+            try { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage("mapLoaded"); } catch (e) { }
+            try { window.location.href = 'https://fitnessapp.local/map-ready'; } catch (e) { }
+        });
+
+        window.addEventListener('resize', () => {
+            map.resize();
+        });
+
+        // 1. Center map on user
+        function centerOnUser(lng, lat) {
+            userMarker.setLngLat([lng, lat]);
+            map.easeTo({ center: [lng, lat], zoom: 15, duration: 350 });
+        }
+
+        // 2. Change map style
+        function changeMapStyle(styleString) {
+            // styleString expected like 'dark-v11'
+            map.setStyle('mapbox://styles/mapbox/' + styleString);
+
+            // Wait for new style to load, then we must redraw routes because changing style wipes custom layers
+            map.once('style.load', () => {
+                // We'll post a message back, but WebView2 isn't standard across Maui Android/iOS identically.
+                // We'll expose a global callback pattern, or C# can wait after style switch and re-eval.
+                // For simplicity, let's keep it isolated, or let C# just re-inject.
+
+                // Workaround: when style changes, layers are lost. 
+                // The easiest pattern is telling C# "hey style loaded, send routines again"
+                // But Maui Android WebView doesn't have a standardized PostMessage.
+                // We will handle re-drawing logic gracefully.
+
+                // Let's add a custom event dispatch for the window to listen to, 
+                // but actually MAUI C# invokes JS. We can just store drawn routes locally in JS!
+            });
+        }
+
+        // We will store routes in JS so when style changes, we can redraw them locally!
+        let _savedRoutes = []; // Array of { id, coords, color }
+
+        /** layerId string -> { click, mouseenter, mouseleave } so we can map.off before re-adding layers */
+        const _routeLayerHandlers = {};
+
+        function unregisterRouteLayerHandlers(layerId) {
+            const h = _routeLayerHandlers[layerId];
+            if (!h) return;
+            try {
+                map.off('click', layerId, h.click);
+                map.off('mouseenter', layerId, h.mouseenter);
+                map.off('mouseleave', layerId, h.mouseleave);
+            } catch (e) { }
+            delete _routeLayerHandlers[layerId];
+        }
+
+        const SUGGESTED_PREVIEW_ID = 'app-suggested-preview';
+        let suggestedPinMarker = null;
+        /** Last [lng, lat] for suggested pin — restored after style reload */
+        let _suggestedPinLngLat = null;
+
+        map.on('style.load', () => {
+            // Re-draw all stored routes seamlessly
+            _savedRoutes.forEach(route => {
+                internalDrawRoute(route.id, route.coords, route.color);
+            });
+            recreateSuggestedPinAfterStyleLoad();
+        });
+
+        function recreateSuggestedPinAfterStyleLoad() {
+            if (!_suggestedPinLngLat || _suggestedPinLngLat.length < 2) return;
+            if (suggestedPinMarker) {
+                try { suggestedPinMarker.remove(); } catch (e) { }
+                suggestedPinMarker = null;
+            }
+            buildSuggestedPinMarker(_suggestedPinLngLat[0], _suggestedPinLngLat[1]);
+        }
+
+        function buildSuggestedPinMarker(lng, lat) {
+            const wrap = document.createElement('div');
+            wrap.className = 'suggested-pin-wrap';
+            const inner = document.createElement('div');
+            inner.className = 'suggested-pin-inner';
+            inner.innerHTML =
+                '<svg class="suggested-pin-svg" viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                '<path fill="#FC5200" stroke="#FFFFFF" stroke-width="2" d="M24 4C14.6 4 7 11.4 7 20.5c0 14.2 17 31.5 17 31.5s17-17.3 17-31.5C41 11.4 33.4 4 24 4z"/>' +
+                '<circle cx="24" cy="20" r="6" fill="#FFFFFF"/>' +
+                '</svg>';
+            wrap.appendChild(inner);
+            suggestedPinMarker = new mapboxgl.Marker({
+                element: wrap,
+                anchor: 'bottom',
+                pitchAlignment: 'viewport',
+                rotationAlignment: 'viewport',
+                altitude: 0,
+                occludedOpacity: 0.35
+            })
+                .setLngLat([lng, lat])
+                .addTo(map);
+        }
+
+        function removeSuggestedPinOnly() {
+            if (suggestedPinMarker) {
+                try { suggestedPinMarker.remove(); } catch (e) { }
+                suggestedPinMarker = null;
+            }
+        }
+
+        function clearSuggestedPinStorage() {
+            removeSuggestedPinOnly();
+            _suggestedPinLngLat = null;
+        }
+
+        /**
+         * Home → Maps: one preview polyline + pin at destination (viewport-aligned for stable lng/lat anchor with terrain).
+         * Replaces any previous suggested preview (same layer id).
+         */
+        function setSuggestedRoutePreview(coordinatesJson, colorHex, destLng, destLat) {
+            const coords = JSON.parse(coordinatesJson);
+            if (!coords || coords.length < 2) return;
+
+            removeSavedRoute(SUGGESTED_PREVIEW_ID);
+            clearSuggestedPinStorage();
+
+            _savedRoutes.push({ id: SUGGESTED_PREVIEW_ID, coords: coords, color: colorHex });
+            internalDrawRoute(SUGGESTED_PREVIEW_ID, coords, colorHex);
+
+            const last = coords[coords.length - 1];
+            var pinLng = last[0];
+            var pinLat = last[1];
+            if (destLng != null && destLat != null && !isNaN(Number(destLng)) && !isNaN(Number(destLat))) {
+                pinLng = Number(destLng);
+                pinLat = Number(destLat);
+            }
+            _suggestedPinLngLat = [pinLng, pinLat];
+            buildSuggestedPinMarker(pinLng, pinLat);
+
+            fitMapToRouteCoords(coordinatesJson);
+        }
+
+        // 3. Add a saved route to the map
+        function addSavedRoute(id, coordinatesJson, colorHex) {
+            const coords = JSON.parse(coordinatesJson);
+
+            // Upsert: same id replaces previous (prevents stacked duplicates)
+            const existing = _savedRoutes.findIndex(r => r.id === id);
+            if (existing >= 0) {
+                const lid = 'route-layer-' + id;
+                unregisterRouteLayerHandlers(lid);
+                if (map.getLayer(lid)) map.removeLayer(lid);
+                if (map.getSource('route-source-' + id)) map.removeSource('route-source-' + id);
+                _savedRoutes.splice(existing, 1);
+            }
+
+            // Store it for style reloads
+            _savedRoutes.push({ id: id, coords: coords, color: colorHex });
+
+            internalDrawRoute(id, coords, colorHex);
+        }
+
+        function replaceSavedRoutesFromBase64(b64) {
+            if (!b64) {
+                clearRoutes();
+                return;
+            }
+
+            try {
+                const json = atob(b64);
+                const routes = JSON.parse(json);
+                clearRoutes();
+
+                if (!Array.isArray(routes)) return;
+
+                routes.forEach(route => {
+                    if (!route || !route.id || !route.coords || !route.color) return;
+                    const coordsJson = JSON.stringify(route.coords);
+                    addSavedRoute(route.id, coordsJson, route.color);
+                });
+            } catch (e) {
+                console.error('[map] replaceSavedRoutesFromBase64', e);
+            }
+        }
+
+        function internalDrawRoute(id, coords, colorHex) {
+            const sourceId = 'route-source-' + id;
+            const layerId = 'route-layer-' + id;
+
+            unregisterRouteLayerHandlers(layerId);
+
+            // Forcefully clean up lingering sources or layers to prevent "already exists" errors during style.load redraws
+            if (map.getLayer(layerId)) {
+                map.removeLayer(layerId);
+            }
+            if (map.getSource(sourceId)) {
+                map.removeSource(sourceId);
+            }
+
+            map.addSource(sourceId, {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'properties': { 'routeId': id },
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': coords // Array of [lng, lat]
+                    }
+                }
+            });
+
+            map.addLayer({
+                'id': layerId,
+                'type': 'line',
+                'source': sourceId,
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': colorHex,
+                    'line-width': 5,
+                    'line-opacity': 0.8
+                }
+            });
+
+            const onRouteClick = (e) => {
+                if (e.features && e.features.length > 0) {
+                    const clickedRouteId = e.features[0].properties.routeId;
+                    window.location.hash = 'route=' + clickedRouteId;
+                }
+            };
+            const onRouteMouseEnter = () => {
+                map.getCanvas().style.cursor = 'pointer';
+            };
+            const onRouteMouseLeave = () => {
+                map.getCanvas().style.cursor = '';
+            };
+
+            map.on('click', layerId, onRouteClick);
+            map.on('mouseenter', layerId, onRouteMouseEnter);
+            map.on('mouseleave', layerId, onRouteMouseLeave);
+            _routeLayerHandlers[layerId] = {
+                click: onRouteClick,
+                mouseenter: onRouteMouseEnter,
+                mouseleave: onRouteMouseLeave
+            };
+        }
+
+        function clearRoutes() {
+            clearSuggestedPinStorage();
+            _savedRoutes.forEach(r => {
+                const layerId = 'route-layer-' + r.id;
+                unregisterRouteLayerHandlers(layerId);
+                if (map.getLayer(layerId)) map.removeLayer(layerId);
+                if (map.getSource('route-source-' + r.id)) map.removeSource('route-source-' + r.id);
+            });
+            _savedRoutes = [];
+        }
+
+        function removeSavedRoute(id) {
+            const idx = _savedRoutes.findIndex(r => r.id === id);
+            if (idx < 0) return;
+            const layerId = 'route-layer-' + id;
+            unregisterRouteLayerHandlers(layerId);
+            if (map.getLayer(layerId)) map.removeLayer(layerId);
+            if (map.getSource('route-source-' + id)) map.removeSource('route-source-' + id);
+            _savedRoutes.splice(idx, 1);
+            if (id === SUGGESTED_PREVIEW_ID) {
+                clearSuggestedPinStorage();
+            }
+        }
+
+        function fitMapToRouteCoords(coordinatesJson) {
+            const coords = JSON.parse(coordinatesJson);
+            if (!coords || coords.length < 1) return;
+            const bounds = new mapboxgl.LngLatBounds(coords[0], coords[0]);
+            for (let i = 1; i < coords.length; i++) {
+                bounds.extend(coords[i]);
+            }
+            map.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 350 });
+        }
+
+        // 3D terrain toggle
+        let _is3D = false;
+        function toggle3D(enable) {
+            _is3D = enable;
+            if (enable) {
+                if (!map.getSource('mapbox-dem')) {
+                    map.addSource('mapbox-dem', {
+                        type: 'raster-dem',
+                        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                        tileSize: 512
+                    });
+                }
+                map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+                map.easeTo({ pitch: 60, duration: 800 });
+            } else {
+                map.setTerrain(null);
+                map.easeTo({ pitch: 0, duration: 800 });
+            }
+        }
+    </script>
+</body>
+
+</html>

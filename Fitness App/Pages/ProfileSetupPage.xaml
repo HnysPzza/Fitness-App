@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:vm="clr-namespace:Fitness_App.ViewModels"
+             xmlns:sys="clr-namespace:System;assembly=netstandard"
+             x:Class="Fitness_App.Pages.ProfileSetupPage"
+             x:DataType="vm:ProfileSetupViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="28,0" Spacing="0"
+                             MinimumHeightRequest="800">
+
+            <!-- HEADING -->
+            <VerticalStackLayout Spacing="6" Margin="0,48,0,28">
+                <Label Text="Set up your profile" FontSize="24" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                <Label Text="Tell us a bit about yourself" FontSize="14" Opacity="0.65"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+            </VerticalStackLayout>
+
+            <!-- AVATAR -->
+            <Grid HorizontalOptions="Center" Margin="0,0,0,28"
+                  HeightRequest="100" WidthRequest="100">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SelectAvatarCommand}" />
+                </Grid.GestureRecognizers>
+                
+                <!-- Avatar placeholder / border -->
+                <Border HeightRequest="100" WidthRequest="100" StrokeThickness="2"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="50" /></Border.StrokeShape>
+                    
+                    <Grid>
+                        <!-- Fallback icon -->
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Person}"
+                                           FontSize="44" Opacity="0.4"
+                                           TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                        
+                        <!-- Actual selected avatar -->
+                        <Image Source="{Binding AvatarUrl}"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding AvatarUrl, Converter={StaticResource StringNotNullOrEmptyConverter}}" />
+                    </Grid>
+                </Border>
+                
+                <!-- Camera badge -->
+                <Border HeightRequest="32" WidthRequest="32" StrokeThickness="0"
+                        HorizontalOptions="End" VerticalOptions="End"
+                        Margin="0,0,0,0">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FC5200" Offset="0" />
+                            <GradientStop Color="#FF6B35" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Photo_camera}"
+                                       FontSize="16" TextColor="White"
+                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+            </Grid>
+
+            <!-- FIRST NAME -->
+            <VerticalStackLayout Spacing="6" Margin="0,0,0,14">
+                <Label Text="First Name *" FontSize="13" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                <Border StrokeThickness="1.5" Padding="14,0" HeightRequest="52"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Entry Placeholder="John" ReturnType="Next" Text="{Binding FirstName}"
+                           FontSize="15" VerticalOptions="Center"
+                           PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Label Text="{Binding FirstNameError}"
+                       IsVisible="{Binding FirstNameError, Converter={StaticResource StringNotNullOrEmptyConverter}}"
+                       FontSize="12" TextColor="#EF4444" Margin="4,0,0,0" />
+            </VerticalStackLayout>
+
+            <!-- LAST NAME -->
+            <VerticalStackLayout Spacing="6" Margin="0,0,0,14">
+                <Label Text="Last Name *" FontSize="13" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                <Border StrokeThickness="1.5" Padding="14,0" HeightRequest="52"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Entry Placeholder="Doe" ReturnType="Next" Text="{Binding LastName}"
+                           FontSize="15" VerticalOptions="Center"
+                           PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+                <Label Text="{Binding LastNameError}"
+                       IsVisible="{Binding LastNameError, Converter={StaticResource StringNotNullOrEmptyConverter}}"
+                       FontSize="12" TextColor="#EF4444" Margin="4,0,0,0" />
+            </VerticalStackLayout>
+
+            <!-- USERNAME -->
+            <VerticalStackLayout Spacing="6" Margin="0,0,0,14">
+                <Label Text="Username *" FontSize="13" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                <Border StrokeThickness="1.5" Padding="14,0" HeightRequest="52"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                        <Label Text="@" FontSize="16" Opacity="0.5" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        <Entry Grid.Column="1" Placeholder="johndoe" ReturnType="Next"
+                               Text="{Binding Username}" FontSize="15" VerticalOptions="Center"
+                               PlaceholderColor="{AppThemeBinding Light=#94A3B8, Dark=#475569}"
+                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    </Grid>
+                </Border>
+                <Label Text="{Binding UsernameError}"
+                       IsVisible="{Binding UsernameError, Converter={StaticResource StringNotNullOrEmptyConverter}}"
+                       FontSize="12" TextColor="#EF4444" Margin="4,0,0,0" />
+            </VerticalStackLayout>
+
+            <!-- DATE OF BIRTH -->
+            <VerticalStackLayout Spacing="6" Margin="0,0,0,14">
+                <Label Text="Date of Birth" FontSize="13" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                <Border StrokeThickness="1.5" Padding="14,0" HeightRequest="52"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <DatePicker Date="{Binding SelectedDate}"
+                                MaximumDate="2099-12-31"
+                                MinimumDate="1920-01-01"
+                                FontSize="15"
+                                TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- GENDER -->
+            <VerticalStackLayout Spacing="6" Margin="0,0,0,20">
+                <Label Text="Gender" FontSize="13" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                <Border StrokeThickness="1.5" Padding="14,0" HeightRequest="52"
+                        Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Picker ItemsSource="{Binding GenderOptions}"
+                            SelectedItem="{Binding SelectedGender}"
+                            FontSize="15"
+                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- GENERAL ERROR -->
+            <Border IsVisible="{Binding GeneralError, Converter={StaticResource StringNotNullOrEmptyConverter}}"
+                    StrokeThickness="0" BackgroundColor="#1AEF4444" Padding="14,10" Margin="0,0,0,14">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <HorizontalStackLayout Spacing="10">
+                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Warning}"
+                                       FontSize="18" TextColor="#EF4444" VerticalOptions="Center" />
+                    <Label Text="{Binding GeneralError}" FontSize="13" TextColor="#EF4444"
+                           VerticalOptions="Center" LineBreakMode="WordWrap"
+                           HorizontalOptions="FillAndExpand" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- CONTINUE BUTTON -->
+            <Grid Margin="0,4,0,40">
+                <Button Text="Continue" FontSize="17" FontAttributes="Bold"
+                        TextColor="White" HeightRequest="56" CornerRadius="16"
+                        Command="{Binding SaveProfileCommand}"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FC5200" Offset="0" />
+                            <GradientStop Color="#FF6B35" Offset="1" />
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Button.Shadow>
+                        <Shadow Brush="#FC5200" Radius="25" Opacity="0.4" Offset="0,8" />
+                    </Button.Shadow>
+                </Button>
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="White" HeightRequest="28" WidthRequest="28"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

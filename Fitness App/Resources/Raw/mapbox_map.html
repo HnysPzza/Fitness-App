@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!--MAPBOX_BUNDLE-->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0F1923;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .user-marker {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563EB;
+            border: 3px solid white;
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+            animation: pulse 2s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 16px rgba(37, 99, 235, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/__START_STYLE__',
+            center: [__START_LNG__, __START_LAT__],
+            zoom: 15,
+            attributionControl: false,
+            logoPosition: 'bottom-left',
+            fadeDuration: 0
+        });
+
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
+
+        var routeCoords = [];
+        /** Throttle auto-follow so we do not stack map.easeTo every GPS tick (main stutter source). */
+        var _lastFollowCamMs = 0;
+        var FOLLOW_CAM_INTERVAL_MS = 5000;
+
+        function maybeFollowCamera(lng, lat) {
+            var now = Date.now();
+            if (now - _lastFollowCamMs < FOLLOW_CAM_INTERVAL_MS) return;
+            _lastFollowCamMs = now;
+            map.jumpTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15) });
+        }
+
+        var trackingInitialized = false;
+        var pendingStartTracking = false;
+        var pickMode = false;
+        var _pressTimer = null;
+        var _touchStart = null;
+        var _touchMoved = false;
+
+        function clearLiveRouteGraphics() {
+            routeCoords = [];
+            _lastFollowCamMs = 0;
+            if (!trackingInitialized) return;
+
+            map.getSource('live-route').setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: [] }
+            });
+
+            map.getSource('start-dot').setData({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [] }
+            });
+
+            if (map.getLayer('end-dot')) map.removeLayer('end-dot');
+            if (map.getSource('end-dot')) map.removeSource('end-dot');
+
+            console.log('[Tracking] Route cleared');
+        }
+
+        function startTracking() {
+            if (!trackingInitialized) {
+                pendingStartTracking = true;
+                return;
+            }
+            clearLiveRouteGraphics();
+            console.log('[Tracking] Started — ready for coordinates');
+        }
+
+        function resetTracking() {
+            startTracking();
+        }
+
+        function clearPlannedRoute() {
+            try {
+                if (!trackingInitialized) return;
+                map.getSource('planned-route').setData({
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: [] }
+                });
+                map.getSource('destination').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [] }
+                });
+            } catch (e) { console.warn('[map] clearPlannedRoute', e); }
+        }
+
+        /** Pending route if user picks a destination before map layers are ready */
+        var _pendingPlannedBase64 = null;
+        var _pendingPlannedDestLng = 0;
+        var _pendingPlannedDestLat = 0;
+
+        function getGeoJsonData(sourceId) {
+            try {
+                var src = map.getSource(sourceId);
+                if (!src || src.type !== 'geojson') return null;
+                if (typeof src.serialize === 'function') {
+                    var s = src.serialize();
+                    return (s && s.data) ? s : null;
+                }
+                return src._data || null;
+            } catch (e) {
+                console.warn('[map] getGeoJsonData', sourceId, e);
+                return null;
+            }
+        }
+
+        function applyPlannedRouteCoords(coords, destLng, destLat) {
+            if (!coords || coords.length < 2) return;
+            map.getSource('planned-route').setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords }
+            });
+            map.getSource('destination').setData({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [destLng, destLat] }
+            });
+            var b = new mapboxgl.LngLatBounds(coords[0], coords[0]);
+            for (var i = 1; i < coords.length; i++) b.extend(coords[i]);
+            map.fitBounds(b, { padding: 70, duration: 350 });
+        }
+
+        /** Base64-encoded JSON array [[lng,lat], ...] — avoids fragile string escaping in the native bridge */
+        function setPlannedRouteFromBase64(b64, destLng, destLat) {
+            if (!b64) return;
+            try {
+                var json = atob(b64);
+                var coords = JSON.parse(json);
+                if (!coords || coords.length < 2) return;
+
+                if (!trackingInitialized) {
+                    _pendingPlannedBase64 = b64;
+                    _pendingPlannedDestLng = destLng;
+                    _pendingPlannedDestLat = destLat;
+                    return;
+                }
+                applyPlannedRouteCoords(coords, destLng, destLat);
+            } catch (e) {
+                console.error('[map] setPlannedRouteFromBase64', e);
+            }
+        }
+
+        function flushPendingPlannedRoute() {
+            if (!_pendingPlannedBase64 || !trackingInitialized) return;
+            var b64 = _pendingPlannedBase64;
+            var lng = _pendingPlannedDestLng;
+            var lat = _pendingPlannedDestLat;
+            _pendingPlannedBase64 = null;
+            try {
+                var json = atob(b64);
+                var coords = JSON.parse(json);
+                applyPlannedRouteCoords(coords, lng, lat);
+            } catch (e) { console.error('[map] flushPendingPlannedRoute', e); }
+        }
+
+        function setDestinationPickMode(enabled) {
+            pickMode = !!enabled;
+        }
+
+        function wirePickListeners() {
+            var canvas = map.getCanvas();
+
+            var _longPressTimer = null;
+            var _touchMoved = false;
+
+            map.on('touchstart', function (e) {
+                if (!pickMode || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length !== 1)) return;
+                _touchMoved = false;
+                clearTimeout(_longPressTimer);
+                var lngLat = e.lngLat;
+                _longPressTimer = setTimeout(function () {
+                    if (_touchMoved || !pickMode) return;
+                    window.location.hash = 'dest=' + lngLat.lng + ',' + lngLat.lat;
+                }, 480);
+            });
+
+            map.on('touchmove', function (e) {
+                _touchMoved = true;
+                clearTimeout(_longPressTimer);
+            });
+
+            map.on('touchend', function (e) {
+                clearTimeout(_longPressTimer);
+            });
+            
+            map.on('touchcancel', function (e) {
+                clearTimeout(_longPressTimer);
+            });
+
+            map.on('contextmenu', function (e) {
+                if (!pickMode) return;
+                e.preventDefault();
+                window.location.hash = 'dest=' + e.lngLat.lng + ',' + e.lngLat.lat;
+            });
+        }
+
+        map.on('load', () => {
+            console.log('[DEBUG] Map loaded and resized');
+
+            map.addSource('planned-route', {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
+            });
+            map.addLayer({
+                id: 'planned-route',
+                type: 'line',
+                source: 'planned-route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                    'line-color': '#38BDF8',
+                    'line-width': 5,
+                    'line-opacity': 0.95
+                }
+            });
+
+            map.addSource('destination', {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
+            });
+            map.addLayer({
+                id: 'destination',
+                type: 'circle',
+                source: 'destination',
+                paint: {
+                    'circle-radius': 10,
+                    'circle-color': '#F472B6',
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#FFFFFF'
+                }
+            });
+
+            map.addSource('live-route', {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
+            });
+            map.addLayer({
+                id: 'live-route-glow',
+                type: 'line',
+                source: 'live-route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                    'line-color': '#39FF14',
+                    'line-width': 18,
+                    'line-opacity': 0.42
+                }
+            });
+            map.addLayer({
+                id: 'live-route',
+                type: 'line',
+                source: 'live-route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                    'line-color': '#00F5FF',
+                    'line-width': 8,
+                    'line-opacity': 1.0
+                }
+            });
+
+            map.addSource('start-dot', {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
+            });
+            map.addLayer({
+                id: 'start-dot',
+                type: 'circle',
+                source: 'start-dot',
+                paint: {
+                    'circle-radius': 9,
+                    'circle-color': '#00C853',
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#FFFFFF'
+                }
+            });
+
+            trackingInitialized = true;
+            wirePickListeners();
+            flushPendingPlannedRoute();
+
+            if (pendingStartTracking) {
+                pendingStartTracking = false;
+                clearLiveRouteGraphics();
+                console.log('[Tracking] Flushed pending start');
+            }
+            try { window.location.href = 'https://fitnessapp.local/map-ready'; } catch (e) { }
+        });
+
+        window.addEventListener('resize', () => {
+            map.resize();
+        });
+
+        var markerEl = document.createElement('div');
+        markerEl.className = 'user-marker';
+
+        var userMarker = new mapboxgl.Marker({ element: markerEl, anchor: 'center' })
+            .setLngLat([__START_LNG__, __START_LAT__])
+            .addTo(map);
+
+        function updateUserLocation(lng, lat) {
+            userMarker.setLngLat([lng, lat]);
+            map.easeTo({ center: [lng, lat], zoom: 16, duration: 300 });
+        }
+
+        /** Max points kept for rendering — long sessions decimate to keep setData cheap. */
+        var ROUTE_COORDS_MAX_RENDER = 4500;
+
+        function decimateRouteCoordsInPlace() {
+            var n = routeCoords.length;
+            if (n <= ROUTE_COORDS_MAX_RENDER) return;
+            var target = Math.floor(ROUTE_COORDS_MAX_RENDER * 0.85);
+            var step = Math.max(2, Math.ceil(n / target));
+            var out = [routeCoords[0]];
+            for (var i = step; i < n - 1; i += step) {
+                out.push(routeCoords[i]);
+            }
+            if (n > 1) out.push(routeCoords[n - 1]);
+            routeCoords = out;
+        }
+
+        /** Batch append for fewer native↔WebView calls (see RecordPage flush interval). */
+        function addCoordinatesBatch(coordsJson) {
+            if (!trackingInitialized) return;
+            try {
+                var arr = JSON.parse(coordsJson);
+                applyCoordinatePoints(arr);
+            } catch (e) {
+                console.error('[map] addCoordinatesBatch', e);
+            }
+        }
+
+        /** Same as addCoordinatesBatch but payload is base64 UTF-8 JSON — avoids fragile escaping from native. */
+        function addCoordinatesBatchFromBase64(b64) {
+            if (!trackingInitialized || !b64) return;
+            try {
+                var json = atob(b64);
+                var arr = JSON.parse(json);
+                applyCoordinatePoints(arr);
+            } catch (e) {
+                console.error('[map] addCoordinatesBatchFromBase64', e);
+            }
+        }
+
+        function applyCoordinatePoints(arr) {
+            if (!arr || arr.length === 0) return;
+
+            var wasEmpty = routeCoords.length === 0;
+            for (var i = 0; i < arr.length; i++) {
+                routeCoords.push(arr[i]);
+            }
+            decimateRouteCoordsInPlace();
+
+            map.getSource('live-route').setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: routeCoords }
+            });
+
+            if (wasEmpty && routeCoords.length > 0) {
+                var c0 = routeCoords[0];
+                map.getSource('start-dot').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: c0 }
+                });
+            }
+
+            var last = routeCoords[routeCoords.length - 1];
+            userMarker.setLngLat(last);
+            maybeFollowCamera(last[0], last[1]);
+        }
+
+        function addCoordinate(lng, lat) {
+            addCoordinatesBatch(JSON.stringify([[lng, lat]]));
+        }
+
+        function showRecordedRouteFromBase64(b64, routeColor) {
+            if (!b64 || !trackingInitialized) return;
+            try {
+                var json = atob(b64);
+                var coords = JSON.parse(json);
+                if (!coords || coords.length < 1) return;
+
+                routeCoords = coords.slice();
+                if (markerEl) markerEl.style.display = 'none';
+
+                if (routeColor) {
+                    try { map.setPaintProperty('live-route', 'line-color', routeColor); } catch (e) { }
+                    try { map.setPaintProperty('live-route-glow', 'line-color', routeColor); } catch (e) { }
+                }
+
+                map.getSource('live-route').setData({
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: routeCoords }
+                });
+
+                map.getSource('start-dot').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: routeCoords[0] }
+                });
+
+                var endCoord = routeCoords[routeCoords.length - 1];
+                if (!map.getSource('end-dot')) {
+                    map.addSource('end-dot', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: { type: 'Point', coordinates: endCoord }
+                        }
+                    });
+                    map.addLayer({
+                        id: 'end-dot',
+                        type: 'circle',
+                        source: 'end-dot',
+                        paint: {
+                            'circle-radius': 9,
+                            'circle-color': '#FF0000',
+                            'circle-stroke-width': 3,
+                            'circle-stroke-color': '#FFFFFF'
+                        }
+                    });
+                } else {
+                    map.getSource('end-dot').setData({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: endCoord }
+                    });
+                }
+
+                if (routeCoords.length > 1) {
+                    var bounds = routeCoords.reduce(function (b, coord) {
+                        return b.extend(coord);
+                    }, new mapboxgl.LngLatBounds(routeCoords[0], routeCoords[0]));
+                    map.fitBounds(bounds, { padding: 80, duration: 400, maxZoom: 16 });
+                } else {
+                    map.easeTo({ center: routeCoords[0], zoom: 16, duration: 300 });
+                }
+            } catch (e) {
+                console.error('[map] showRecordedRouteFromBase64', e);
+            }
+        }
+
+        function stopTracking(lng, lat) {
+            if (!trackingInitialized || routeCoords.length === 0) return;
+
+            if (!map.getSource('end-dot')) {
+                map.addSource('end-dot', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lng, lat] }
+                    }
+                });
+                map.addLayer({
+                    id: 'end-dot',
+                    type: 'circle',
+                    source: 'end-dot',
+                    paint: {
+                        'circle-radius': 9,
+                        'circle-color': '#FF0000',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#FFFFFF'
+                    }
+                });
+            } else {
+                map.getSource('end-dot').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [lng, lat] }
+                });
+            }
+
+            if (routeCoords.length > 1) {
+                var bounds = routeCoords.reduce(function (b, coord) {
+                    return b.extend(coord);
+                }, new mapboxgl.LngLatBounds(routeCoords[0], routeCoords[0]));
+
+                map.fitBounds(bounds, { padding: 80, duration: 400 });
+            }
+
+            console.log('[Tracking] Stopped. Total coords: ' + routeCoords.length);
+        }
+    </script>
+</body>
+
+</html>
