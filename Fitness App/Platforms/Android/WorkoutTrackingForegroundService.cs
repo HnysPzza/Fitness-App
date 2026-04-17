@@ -107,7 +107,7 @@ public sealed class WorkoutTrackingForegroundService : Service
             var snapshot = WorkoutSessionManager.GetSnapshot();
             if (!snapshot.IsActive)
             {
-                // Workout ended — tear down
+                // Workout ended; tear down.
                 StopSelfUpdating();
                 if (Build.VERSION.SdkInt >= BuildVersionCodes.N)
                     StopForeground(StopForegroundFlags.Remove);
@@ -138,6 +138,8 @@ public sealed class WorkoutTrackingForegroundService : Service
 
         var launchIntent = new Intent(this, typeof(MainActivity));
         launchIntent.AddFlags(ActivityFlags.SingleTop | ActivityFlags.ClearTop | ActivityFlags.NewTask);
+        launchIntent.PutExtra(NotificationNavigationService.ExtraTargetPage, NotificationNavigationService.TargetRecordPage);
+        launchIntent.PutExtra(NotificationNavigationService.ExtraPlannedSport, snapshot.Sport);
         var launchPendingIntent = PendingIntent.GetActivity(
             this,
             0,
@@ -162,23 +164,23 @@ public sealed class WorkoutTrackingForegroundService : Service
 
         var elapsed = snapshot.Elapsed;
         string elapsedText = $"{elapsed.Hours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-        string statusText = snapshot.IsPaused ? " ⏸ PAUSED" : "";
+        string statusText = snapshot.IsPaused ? " PAUSED" : "";
         string metricText = snapshot.IsGpsDependent
-            ? $"{snapshot.DistanceKm:F2} km • max {snapshot.MaxSpeedKmh:F1} km/h"
-            : $"{snapshot.DistanceKm:F2} km • {snapshot.Sport}";
+            ? $"{snapshot.DistanceKm:F2} km | max {snapshot.MaxSpeedKmh:F1} km/h"
+            : $"{snapshot.DistanceKm:F2} km | {snapshot.Sport}";
 
         return new NotificationCompat.Builder(this, ChannelId)
             .SetSmallIcon(Resource.Mipmap.appicon_round)
             .SetContentTitle($"{snapshot.Sport} in progress{statusText}")
-            .SetContentText($"{elapsedText} • {metricText}")
-            .SetStyle(new NotificationCompat.BigTextStyle().BigText($"{elapsedText} • {metricText}"))
+            .SetContentText($"{elapsedText} | {metricText}")
+            .SetStyle(new NotificationCompat.BigTextStyle().BigText($"{elapsedText} | {metricText}"))
             .SetOngoing(true)
             .SetOnlyAlertOnce(true)
             .SetContentIntent(launchPendingIntent)
-            .AddAction(0, snapshot.IsPaused ? "▶ Resume" : "⏸ Pause", pauseResumePendingIntent)
-            .AddAction(0, "⏹ Stop", stopPendingIntent)
+            .AddAction(0, snapshot.IsPaused ? "Resume" : "Pause", pauseResumePendingIntent)
+            .AddAction(0, "Stop", stopPendingIntent)
             .SetUsesChronometer(false)
-            .SetCategory(Notification.CategoryWorkout)
+            .SetCategory(NotificationCompat.CategoryStatus)
             .SetVisibility((int)NotificationVisibility.Public)
             .SetPriority((int)NotificationPriority.Low)
             .Build();
@@ -198,7 +200,7 @@ public sealed class WorkoutTrackingForegroundService : Service
             Description = "Shows active workout tracking controls.",
             LockscreenVisibility = NotificationVisibility.Public
         };
-        // Disable sound/vibration for the workout channel — it updates every second
+        // Disable sound/vibration for the workout channel; it updates every second.
         channel.SetSound(null, null);
         channel.EnableVibration(false);
         manager.CreateNotificationChannel(channel);

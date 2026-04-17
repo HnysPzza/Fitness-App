@@ -1,8 +1,8 @@
 using Supabase;
 using Supabase.Gotrue;
 using Supabase.Gotrue.Interfaces;
-using Postgrest.Models;
-using Postgrest.Attributes;
+using Supabase.Postgrest.Models;
+using Supabase.Postgrest.Attributes;
 
 namespace Fitness_App.Services;
 
@@ -31,6 +31,7 @@ public sealed class SupabaseService : ISupabaseService
         var options = new SupabaseOptions
         {
             AutoRefreshToken = true,
+            AutoConnectRealtime = true,
         };
 
         _client = new Supabase.Client(

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!--MAPBOX_BUNDLE-->
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0F172A;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .preview-center {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #FC5200;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 0 0 8px rgba(252, 82, 0, 0.18);
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/__START_STYLE__',
+            center: [__START_LNG__, __START_LAT__],
+            zoom: 14.4,
+            interactive: false,
+            attributionControl: false,
+            logoPosition: 'bottom-left',
+            fadeDuration: 0,
+            preserveDrawingBuffer: false
+        });
+
+        map.dragPan.disable();
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragRotate.disable();
+        map.keyboard.disable();
+        map.doubleClickZoom.disable();
+        map.touchZoomRotate.disable();
+
+        const centerEl = document.createElement('div');
+        centerEl.className = 'preview-center';
+
+        new mapboxgl.Marker({ element: centerEl, anchor: 'center' })
+            .setLngLat([__START_LNG__, __START_LAT__])
+            .addTo(map);
+
+        map.on('load', () => {
+            map.resize();
+        });
+
+        window.addEventListener('resize', () => map.resize());
+    </script>
+</body>
+</html>

@@ -1,15 +1,22 @@
 using Fitness_App.Services;
+using Microsoft.Extensions.DependencyInjection;
+#if IOS
+using StoreKit;
+#endif
 
 namespace Fitness_App.Pages;
 
 public partial class GeneralSettingsPage : ContentPage
 {
     private readonly ISettingsService _settings;
+    private readonly IAppNotificationService _notifications;
+    private ISupabaseService? _supabase;
 
-    public GeneralSettingsPage(ISettingsService settings)
+    public GeneralSettingsPage(ISettingsService settings, IAppNotificationService notifications)
     {
         InitializeComponent();
         _settings = settings;
+        _notifications = notifications;
         LoadSavedToggles();
     }
 
@@ -17,6 +24,10 @@ public partial class GeneralSettingsPage : ContentPage
     {
         base.OnAppearing();
         LoadSavedToggles();
+
+        // Lazy-resolve so the DI container is ready
+        _supabase ??= Handler?.MauiContext?.Services?.GetService<ISupabaseService>()
+                   ?? Application.Current?.Handler?.MauiContext?.Services?.GetService<ISupabaseService>();
     }
 
     private void LoadSavedToggles()
@@ -34,10 +45,11 @@ public partial class GeneralSettingsPage : ContentPage
 
     // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
 
-    private void OnPushNotificationsToggled(object? sender, ToggledEventArgs e)
+    private async void OnPushNotificationsToggled(object? sender, ToggledEventArgs e)
     {
         _settings.PushNotificationsEnabled = e.Value;
         UpdateNotificationSubRows(e.Value);
+        await _notifications.RefreshWorkoutReminderScheduleAsync();
     }
 
     private void UpdateNotificationSubRows(bool enabled)
@@ -50,9 +62,10 @@ public partial class GeneralSettingsPage : ContentPage
         WeeklySummaryRow.InputTransparent = !enabled;
     }
 
-    private void OnWorkoutRemindersToggled(object? sender, ToggledEventArgs e)
+    private async void OnWorkoutRemindersToggled(object? sender, ToggledEventArgs e)
     {
         _settings.WorkoutRemindersEnabled = e.Value;
+        await _notifications.RefreshWorkoutReminderScheduleAsync();
     }
 
     private void OnAchievementAlertsToggled(object? sender, ToggledEventArgs e)
@@ -250,11 +263,29 @@ public partial class GeneralSettingsPage : ContentPage
             "Are you sure you want to log out?",
             "Log Out", "Cancel");
 
-        if (confirm)
+        if (!confirm) return;
+
+        try
         {
-            // In production: clear Supabase session + local storage
-            await DisplayAlert("Logged Out", "You have been logged out.", "OK");
-            // Navigate to login/onboarding
+            // Sign out from Supabase (clears the remote session token)
+            if (_supabase != null)
+                await _supabase.SignOutAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[GeneralSettings] SignOut error: {ex.Message}");
+        }
+        finally
+        {
+            // Always clear local cached credentials so the app doesn't auto-login
+            Preferences.Default.Remove("supabase_session");
+            Preferences.Default.Remove("last_selected_sport");
+
+            // Navigate back to the login shell route
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Shell.Current.GoToAsync("//login");
+            });
         }
     }
 }

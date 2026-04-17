@@ -1,4 +1,6 @@
-﻿namespace Fitness_App.Pages;
+﻿using Microsoft.Maui.Controls.Shapes;
+
+namespace Fitness_App.Pages;
 
 public partial class HelpFaqPage : ContentPage
 {
@@ -52,28 +54,22 @@ public partial class HelpFaqPage : ContentPage
                 FaqContainer.Children.Add(new Label
                 {
                     Text = category,
-                    FontSize = 12,
-                    TextColor = Color.FromArgb("#9E9E9E"),
+                    FontSize = 11,
+                    TextColor = Color.FromArgb("#64748B"),
                     FontAttributes = FontAttributes.Bold,
-                    Margin = new Thickness(16, 20, 16, 8)
+                    CharacterSpacing = 1.2,
+                    Margin = new Thickness(0, lastCategory is null ? 0 : 8, 0, 0)
                 });
                 lastCategory = category;
             }
 
             // Divider
-            FaqContainer.Children.Add(new BoxView
-            {
-                HeightRequest = 0.5,
-                Color = Color.FromArgb("#E0E0E0"),
-                Margin = new Thickness(16, 0, 0, 0)
-            });
-
             var answerLabel = new Label
             {
                 Text = answer,
                 FontSize = 14,
-                TextColor = Color.FromArgb("#9E9E9E"),
-                Margin = new Thickness(16, 0, 16, 12),
+                TextColor = Color.FromArgb("#94A3B8"),
+                Margin = new Thickness(0, 0, 0, 0),
                 LineBreakMode = LineBreakMode.WordWrap,
                 IsVisible = _expandedItems.Contains(i)
             };
@@ -82,23 +78,23 @@ public partial class HelpFaqPage : ContentPage
             {
                 Text = _expandedItems.Contains(i) ? "▲" : "▼",
                 FontSize = 14,
-                TextColor = Color.FromArgb("#BDBDBD"),
+                TextColor = Color.FromArgb("#64748B"),
                 VerticalOptions = LayoutOptions.Center,
                 HorizontalOptions = LayoutOptions.End
             };
 
             var questionGrid = new Grid
             {
-                HeightRequest = 56,
-                Padding = new Thickness(16, 0),
+                MinimumHeightRequest = 64,
+                Padding = new Thickness(18, 14),
                 ColumnDefinitions = { new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto) }
             };
             questionGrid.Add(new Label
             {
                 Text = question,
                 FontSize = 16,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
-                    ? Color.FromArgb("#FFFFFF") : Color.FromArgb("#000000"),
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Color.FromArgb("#F8FAFC"),
                 VerticalOptions = LayoutOptions.Center
             }, 0);
             questionGrid.Add(chevron, 1);
@@ -122,8 +118,44 @@ public partial class HelpFaqPage : ContentPage
             };
             questionGrid.GestureRecognizers.Add(tapGesture);
 
-            FaqContainer.Children.Add(questionGrid);
-            FaqContainer.Children.Add(answerLabel);
+            var divider = new BoxView
+            {
+                HeightRequest = 1,
+                Color = Color.FromArgb("#162033"),
+                Margin = new Thickness(18, 0, 18, 0),
+                IsVisible = _expandedItems.Contains(i)
+            };
+
+            var contentStack = new VerticalStackLayout
+            {
+                Spacing = 12,
+                Children =
+                {
+                    questionGrid,
+                    divider,
+                    answerLabel
+                }
+            };
+
+            var card = new Border
+            {
+                BackgroundColor = Color.FromArgb("#111827"),
+                Stroke = Color.FromArgb("#243041"),
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 20 },
+                Padding = new Thickness(0),
+                Content = contentStack
+            };
+
+            answerLabel.IsVisible = _expandedItems.Contains(i);
+            divider.IsVisible = _expandedItems.Contains(i);
+
+            tapGesture.Tapped += (s, e) =>
+            {
+                divider.IsVisible = answerLabel.IsVisible;
+            };
+
+            FaqContainer.Children.Add(card);
 
             idx++;
         }
@@ -134,7 +166,7 @@ public partial class HelpFaqPage : ContentPage
             {
                 Text = "No results found",
                 FontSize = 16,
-                TextColor = Color.FromArgb("#9E9E9E"),
+                TextColor = Color.FromArgb("#94A3B8"),
                 HorizontalOptions = LayoutOptions.Center,
                 Margin = new Thickness(0, 40, 0, 0)
             });

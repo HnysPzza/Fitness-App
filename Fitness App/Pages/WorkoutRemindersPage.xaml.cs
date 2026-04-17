@@ -5,14 +5,14 @@ namespace Fitness_App.Pages;
 public partial class WorkoutRemindersPage : ContentPage
 {
     private readonly ISettingsService _settings;
+    private readonly IAppNotificationService _notifications;
     private List<string> _selectedDays;
 
-    private readonly string[] _allDays = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-
-    public WorkoutRemindersPage(ISettingsService settings)
+    public WorkoutRemindersPage(ISettingsService settings, IAppNotificationService notifications)
     {
         InitializeComponent();
         _settings = settings;
+        _notifications = notifications;
 
         EnableSwitch.IsToggled = _settings.WorkoutRemindersEnabled;
 
@@ -30,10 +30,11 @@ public partial class WorkoutRemindersPage : ContentPage
         UpdateContentEnabled(_settings.WorkoutRemindersEnabled);
     }
 
-    private void OnEnableToggled(object? sender, ToggledEventArgs e)
+    private async void OnEnableToggled(object? sender, ToggledEventArgs e)
     {
         _settings.WorkoutRemindersEnabled = e.Value;
         UpdateContentEnabled(e.Value);
+        await _notifications.RefreshWorkoutReminderScheduleAsync();
     }
 
     private void UpdateContentEnabled(bool enabled)
@@ -56,6 +57,7 @@ public partial class WorkoutRemindersPage : ContentPage
             if (DateTime.TryParse(result.Replace("AM", " AM").Replace("PM", " PM"), out var dt))
             {
                 _settings.WorkoutReminderTime = dt.TimeOfDay;
+                await _notifications.RefreshWorkoutReminderScheduleAsync();
             }
         }
     }
@@ -63,21 +65,6 @@ public partial class WorkoutRemindersPage : ContentPage
     private async void OnDaysTapped(object? sender, TappedEventArgs e)
     {
         try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-        // Build multi-select via confirm dialogs for each day
-        var newSelection = new List<string>();
-        foreach (var day in _allDays)
-        {
-            bool currentlySelected = _selectedDays.Contains(day);
-            string status = currentlySelected ? "✓ Selected" : "○ Not selected";
-            var pick = await DisplayActionSheet(
-                $"{day} — currently: {status}",
-                null, null, "Add", "Remove");
-            if (pick == "Add") newSelection.Add(day);
-            else if (pick == "Remove") { /* skip */ }
-            else newSelection.AddRange(_selectedDays.Contains(day) ? new[] { day } : Array.Empty<string>());
-        }
-
-        // Simpler: just prompt once for the whole set
         await ShowDayPickerDialog();
     }
 
@@ -96,6 +83,7 @@ public partial class WorkoutRemindersPage : ContentPage
         _selectedDays = dayStr.Split(',', StringSplitOptions.TrimEntries).ToList();
         _settings.WorkoutReminderDays = string.Join(",", _selectedDays);
         DaysLabel.Text = dayStr;
+        await _notifications.RefreshWorkoutReminderScheduleAsync();
     }
 
     private async void OnMessageTapped(object? sender, TappedEventArgs e)
@@ -111,6 +99,7 @@ public partial class WorkoutRemindersPage : ContentPage
         {
             _settings.WorkoutReminderMessage = result;
             MessageLabel.Text = result;
+            await _notifications.RefreshWorkoutReminderScheduleAsync();
         }
     }
 }

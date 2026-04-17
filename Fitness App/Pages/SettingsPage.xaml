@@ -1,366 +1,732 @@
 <?xml version="1.0" encoding="utf-8" ?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+
              xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+
              xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+
              x:Class="Fitness_App.Pages.SettingsPage"
+
              Title="Settings"
+
              BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
 
+
+
     <ScrollView>
+
         <VerticalStackLayout Spacing="20" Padding="20">
 
+
+
             <!-- Header -->
+
             <VerticalStackLayout Spacing="8">
+
                 <Label Text="Settings" 
+
                        FontSize="32" 
+
                        FontAttributes="Bold"
+
                        TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                 <Label Text="Customize your experience" 
+
                        FontSize="14" 
+
                        Opacity="0.7"
+
                        TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
             </VerticalStackLayout>
 
+
+
             <!-- Profile Section -->
+
             <Border StrokeThickness="0"
+
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+
                 <Border.StrokeShape>
+
                     <RoundRectangle CornerRadius="24" />
+
                 </Border.StrokeShape>
+
                 <Border.Shadow>
+
                     <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+
                             Radius="20" 
+
                             Opacity="0.1" 
+
                             Offset="0,6" />
+
                 </Border.Shadow>
 
+
+
                 <VerticalStackLayout Padding="24" Spacing="20">
+
                     <Label Text="Profile" 
+
                            FontSize="18" 
+
                            FontAttributes="Bold"
+
                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+
 
                     <!-- Profile Summary Row -->
+
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+
                         <Grid.GestureRecognizers>
+
                             <TapGestureRecognizer Tapped="OnEditProfileClicked" />
+
                         </Grid.GestureRecognizers>
+
                         <!-- Profile Picture -->
+
                         <Border HeightRequest="56"
+
                                 WidthRequest="56"
+
                                 StrokeThickness="2"
+
                                 Stroke="#FC5200">
+
                             <Border.StrokeShape>
+
                                 <RoundRectangle CornerRadius="28" />
+
                             </Border.StrokeShape>
+
                             <Grid>
+
                                 <Border x:Name="ProfileIconContainer"
+
                                         BackgroundColor="{AppThemeBinding Light=#E0E7FF, Dark=#334155}">
+
                                     <Border.StrokeShape>
+
                                         <RoundRectangle CornerRadius="26" />
+
                                     </Border.StrokeShape>
+
                                     <controls:IconLabel x:Name="ProfileIcon"
+
                                                        Text="{x:Static icons:MaterialSymbols.Person}" 
+
                                                        FontSize="28"
+
                                                        TextColor="#FC5200"
+
                                                        HorizontalOptions="Center"
+
                                                        VerticalOptions="Center" />
+
                                 </Border>
+
                                 <Image x:Name="ProfileImage"
+
                                        IsVisible="False"
+
                                        Aspect="AspectFill"
+
                                        WidthRequest="50"
+
                                        HeightRequest="50"
+
                                        HorizontalOptions="Center"
+
                                        VerticalOptions="Center">
+
                                     <Image.Clip>
+
                                         <EllipseGeometry Center="25,25" RadiusX="25" RadiusY="25" />
+
                                     </Image.Clip>
+
                                 </Image>
+
                             </Grid>
+
                         </Border>
+
+
 
                         <!-- Name -->
+
                         <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+
                             <Label x:Name="SettingsUserNameLabel"
+
                                    Text="Athlete" 
+
                                    FontSize="17"
+
                                    FontAttributes="Bold"
+
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                             <Label Text="Tap to edit profile" 
+
                                    FontSize="13"
+
                                    Opacity="0.6"
+
                                    TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                         </VerticalStackLayout>
+
+
 
                         <!-- Edit Arrow -->
+
                         <controls:IconLabel Grid.Column="2"
+
                                            Text="{x:Static icons:MaterialSymbols.Chevron_right}" 
+
                                            FontSize="24"
+
                                            Opacity="0.5"
+
                                            TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+
                                            VerticalOptions="Center" />
+
                     </Grid>
+
                 </VerticalStackLayout>
+
             </Border>
+
+
 
             <!-- App Settings -->
+
             <Border StrokeThickness="0"
+
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+
                 <Border.StrokeShape>
+
                     <RoundRectangle CornerRadius="24" />
+
                 </Border.StrokeShape>
+
                 <Border.Shadow>
+
                     <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+
                             Radius="20" 
+
                             Opacity="0.1" 
+
                             Offset="0,6" />
+
                 </Border.Shadow>
 
+
+
                 <VerticalStackLayout Padding="24" Spacing="20">
+
                     <Label Text="App Settings" 
+
                            FontSize="18" 
+
                            FontAttributes="Bold"
+
                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+
 
                     <!-- Dark Mode Toggle -->
+
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+
                         <Border HeightRequest="48"
+
                                 WidthRequest="48"
+
                                 BackgroundColor="{AppThemeBinding Light=#EEF2FF, Dark=#334155}">
+
                             <Border.StrokeShape>
+
                                 <RoundRectangle CornerRadius="14" />
+
                             </Border.StrokeShape>
+
                             <controls:IconLabel x:Name="ThemeIcon"
+
                                                Text="{x:Static icons:MaterialSymbols.Dark_mode}" 
+
                                                FontSize="24"
+
                                                TextColor="#2563EB"
+
                                                HorizontalOptions="Center"
+
                                                VerticalOptions="Center" />
+
                         </Border>
 
+
+
                         <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+
                             <Label Text="Dark Mode" 
+
                                    FontSize="16"
+
                                    FontAttributes="Bold"
+
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                             <Label x:Name="ThemeStatusLabel"
+
                                    Text="Use dark theme" 
+
                                    FontSize="13"
+
                                    Opacity="0.7"
+
                                    TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                         </VerticalStackLayout>
 
+
+
                         <Switch Grid.Column="2"
+
                                 x:Name="DarkModeSwitch"
+
                                 OnColor="#FC5200"
+
                                 ThumbColor="White"
+
                                 Toggled="OnDarkModeToggled"
+
                                 VerticalOptions="Center" />
+
                     </Grid>
+
+
 
                     <!-- Units Selection -->
+
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+
                         <Border HeightRequest="48"
+
                                 WidthRequest="48"
+
                                 BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#334155}">
+
                             <Border.StrokeShape>
+
                                 <RoundRectangle CornerRadius="14" />
+
                             </Border.StrokeShape>
+
                             <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Straighten}" 
+
                                                FontSize="24"
+
                                                TextColor="#F59E0B"
+
                                                HorizontalOptions="Center"
+
                                                VerticalOptions="Center" />
+
                         </Border>
 
+
+
                         <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+
                             <Label Text="Units" 
+
                                    FontSize="16"
+
                                    FontAttributes="Bold"
+
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                             <Label Text="Distance measurement" 
+
                                    FontSize="13"
+
                                    Opacity="0.7"
+
                                    TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                         </VerticalStackLayout>
+
+
 
                         <Picker Grid.Column="2"
+
                                 x:Name="UnitsPicker"
+
                                 SelectedIndex="0"
+
                                 TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+
                                 VerticalOptions="Center">
+
                             <Picker.Items>
+
                                 <x:String>Kilometers</x:String>
+
                                 <x:String>Miles</x:String>
+
                             </Picker.Items>
+
                         </Picker>
+
                     </Grid>
+
+
 
                     <!-- Notifications Toggle -->
+
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+
                         <Border HeightRequest="48"
+
                                 WidthRequest="48"
+
                                 BackgroundColor="{AppThemeBinding Light=#DCFCE7, Dark=#334155}">
+
                             <Border.StrokeShape>
+
                                 <RoundRectangle CornerRadius="14" />
+
                             </Border.StrokeShape>
+
                             <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Notifications}" 
+
                                                FontSize="24"
+
                                                TextColor="#10B981"
+
                                                HorizontalOptions="Center"
+
                                                VerticalOptions="Center" />
+
                         </Border>
 
+
+
                         <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+
                             <Label Text="Notifications" 
+
                                    FontSize="16"
+
                                    FontAttributes="Bold"
+
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                             <Label Text="Activity reminders and summaries" 
+
                                    FontSize="13"
+
                                    Opacity="0.7"
+
                                    TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                         </VerticalStackLayout>
 
+
+
                         <Switch Grid.Column="2"
+
                                 x:Name="NotificationsSwitch"
+
                                 OnColor="#FC5200"
+
                                 ThumbColor="White"
+
                                 IsToggled="True"
+
                                 VerticalOptions="Center" />
+
                     </Grid>
+
                 </VerticalStackLayout>
+
             </Border>
+
+
 
             <!-- Activity Settings -->
+
             <Border StrokeThickness="0"
+
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+
                 <Border.StrokeShape>
+
                     <RoundRectangle CornerRadius="24" />
+
                 </Border.StrokeShape>
+
                 <Border.Shadow>
+
                     <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+
                             Radius="20" 
+
                             Opacity="0.1" 
+
                             Offset="0,6" />
+
                 </Border.Shadow>
+
+
 
                 <VerticalStackLayout Padding="24" Spacing="20">
+
                     <Label Text="Activity Settings" 
+
                            FontSize="18" 
+
                            FontAttributes="Bold"
+
                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+
 
                     <!-- Daily Goal -->
+
                     <VerticalStackLayout Spacing="12">
+
                         <HorizontalStackLayout Spacing="12">
+
                             <Border HeightRequest="48"
+
                                     WidthRequest="48"
+
                                     BackgroundColor="{AppThemeBinding Light=#FECACA, Dark=#334155}">
+
                                 <Border.StrokeShape>
+
                                     <RoundRectangle CornerRadius="14" />
+
                                 </Border.StrokeShape>
+
                                 <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Flag}" 
+
                                                    FontSize="24"
+
                                                    TextColor="#EF4444"
+
                                                    HorizontalOptions="Center"
+
                                                    VerticalOptions="Center" />
+
                             </Border>
 
+
+
                             <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+
                                 <Label Text="Daily Goal" 
+
                                        FontSize="16"
+
                                        FontAttributes="Bold"
+
                                        TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
                                 <Label x:Name="DailyGoalLabel"
+
                                        Text="10 km per day" 
+
                                        FontSize="13"
+
                                        Opacity="0.7"
+
                                        TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                             </VerticalStackLayout>
+
                         </HorizontalStackLayout>
 
+
+
                         <Slider x:Name="DailyGoalSlider"
+
                                 Minimum="1"
+
                                 Maximum="50"
+
                                 Value="10"
+
                                 MinimumTrackColor="#FC5200"
+
                                 MaximumTrackColor="{AppThemeBinding Light=#E2E8F0, Dark=#475569}"
+
                                 ThumbColor="#FC5200"
+
                                 ValueChanged="OnDailyGoalChanged" />
+
                     </VerticalStackLayout>
+
                 </VerticalStackLayout>
+
             </Border>
+
+
 
             <!-- Data Management -->
+
             <Border StrokeThickness="0"
+
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+
                 <Border.StrokeShape>
+
                     <RoundRectangle CornerRadius="24" />
+
                 </Border.StrokeShape>
+
                 <Border.Shadow>
+
                     <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+
                             Radius="20" 
+
                             Opacity="0.1" 
+
                             Offset="0,6" />
+
                 </Border.Shadow>
+
+
 
                 <VerticalStackLayout Padding="24" Spacing="16">
+
                     <Label Text="Data Management" 
+
                            FontSize="18" 
+
                            FontAttributes="Bold"
+
                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+
+
 
                     <!-- Clear History Button -->
+
                     <Button Text="Clear Activity History"
+
                             Clicked="OnClearHistoryClicked"
+
                             FontSize="16"
+
                             FontAttributes="Bold"
+
                             TextColor="White"
+
                             HeightRequest="56"
+
                             CornerRadius="16"
+
                             BackgroundColor="#EF4444">
+
                         <Button.Shadow>
+
                             <Shadow Brush="#EF4444" Radius="15" Opacity="0.2" Offset="0,4" />
+
                         </Button.Shadow>
+
                     </Button>
+
                 </VerticalStackLayout>
+
             </Border>
+
+
 
             <!-- About -->
+
             <Border StrokeThickness="0"
+
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+
                 <Border.StrokeShape>
+
                     <RoundRectangle CornerRadius="24" />
+
                 </Border.StrokeShape>
+
                 <Border.Shadow>
+
                     <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+
                             Radius="20" 
+
                             Opacity="0.1" 
+
                             Offset="0,6" />
+
                 </Border.Shadow>
 
+
+
                 <VerticalStackLayout Padding="24" Spacing="12">
+
                     <Label Text="About StrideX" 
+
                            FontSize="18" 
+
                            FontAttributes="Bold"
+
                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
 
+
+
                     <Label Text="Version 1.0.0" 
+
                            FontSize="14"
+
                            Opacity="0.7"
+
                            TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                     
+
                     <Label Text="A modern fitness tracking app built with .NET MAUI" 
+
                            FontSize="14"
+
                            Opacity="0.7"
+
                            LineBreakMode="WordWrap"
+
                            TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+
                 </VerticalStackLayout>
+
             </Border>
 
+
+
         </VerticalStackLayout>
+
     </ScrollView>
+
 </ContentPage>
+

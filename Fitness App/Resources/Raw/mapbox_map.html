@@ -71,11 +71,19 @@
             fadeDuration: 0
         });
 
+        var _currentStyle = '__START_STYLE__';
+        var _is3D = false;
+        var _lastUserLngLat = [__START_LNG__, __START_LAT__];
+        var _lastHeadingDeg = null;
+        var _plannedRouteCoords = [];
+        var _plannedDestLng = null;
+        var _plannedDestLat = null;
+        var _pickListenersWired = false;
+
         map.dragRotate.disable();
         map.touchZoomRotate.disableRotation();
 
         var routeCoords = [];
-        /** Throttle auto-follow so we do not stack map.easeTo every GPS tick (main stutter source). */
         var _lastFollowCamMs = 0;
         var FOLLOW_CAM_INTERVAL_MS = 5000;
 
@@ -86,12 +94,201 @@
             map.jumpTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15) });
         }
 
+        function projectLngLat(lng, lat, distanceMeters, bearingDeg) {
+            var earthRadiusMeters = 6378137;
+            var bearing = bearingDeg * Math.PI / 180;
+            var latRad = lat * Math.PI / 180;
+            var lngRad = lng * Math.PI / 180;
+            var angularDistance = distanceMeters / earthRadiusMeters;
+            var nextLat = Math.asin(
+                Math.sin(latRad) * Math.cos(angularDistance) +
+                Math.cos(latRad) * Math.sin(angularDistance) * Math.cos(bearing)
+            );
+            var nextLng = lngRad + Math.atan2(
+                Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latRad),
+                Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(nextLat)
+            );
+            return [nextLng * 180 / Math.PI, nextLat * 180 / Math.PI];
+        }
+
+        function createHeadingConePolygon(lng, lat, headingDeg, radiusMeters) {
+            var spreadDegrees = 24;
+            var coordinates = [[lng, lat]];
+            for (var step = -2; step <= 2; step++) {
+                coordinates.push(projectLngLat(lng, lat, radiusMeters, headingDeg + step * (spreadDegrees / 2)));
+            }
+            coordinates.push([lng, lat]);
+            return coordinates;
+        }
+
+        function calculateConeRadius() {
+            var zoom = map.getZoom();
+            // Dynamic radius based on zoom: larger at lower zoom, smaller at higher zoom
+            // Zoom 10 = ~100m, Zoom 15 = ~34m, Zoom 18 = ~15m
+            var baseRadius = 34;
+            var zoomFactor = Math.pow(2, 15 - zoom);
+            return Math.max(15, Math.min(100, baseRadius * zoomFactor));
+        }
+
+        function ensureUserHeadingLayers() {
+            // Pulse wave source
+            if (!map.getSource('user-heading-pulse')) {
+                map.addSource('user-heading-pulse', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+            }
+
+            // Main cone source
+            if (!map.getSource('user-heading-source')) {
+                map.addSource('user-heading-source', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+            }
+
+            // Pulse wave layer (rendered first, behind main cone)
+            if (!map.getLayer('user-heading-pulse')) {
+                map.addLayer({
+                    id: 'user-heading-pulse',
+                    type: 'fill',
+                    source: 'user-heading-pulse',
+                    paint: {
+                        'fill-color': '#60A5FA',
+                        'fill-opacity': 0
+                    }
+                });
+            }
+
+            // Main cone fill
+            if (!map.getLayer('user-heading-fill')) {
+                map.addLayer({
+                    id: 'user-heading-fill',
+                    type: 'fill',
+                    source: 'user-heading-source',
+                    paint: {
+                        'fill-color': '#60A5FA',
+                        'fill-opacity': 0.22
+                    }
+                });
+            }
+
+            // Main cone outline
+            if (!map.getLayer('user-heading-outline')) {
+                map.addLayer({
+                    id: 'user-heading-outline',
+                    type: 'line',
+                    source: 'user-heading-source',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#BFDBFE',
+                        'line-width': 2,
+                        'line-opacity': 0.85
+                    }
+                });
+            }
+        }
+
+        var _pulseAnimationFrame = null;
+        var _pulseStartTime = null;
+
+        function setHeadingConeData(source, lng, lat, headingDeg, radiusMeters) {
+            if (!source) return;
+            source.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [createHeadingConePolygon(lng, lat, headingDeg, radiusMeters)]
+                    },
+                    properties: {}
+                }]
+            });
+        }
+
+        function updateUserHeadingCone(lng, lat, headingDeg) {
+            ensureUserHeadingLayers();
+            var source = map.getSource('user-heading-source');
+            var pulseSource = map.getSource('user-heading-pulse');
+            if (!source) return;
+
+            if (headingDeg == null || isNaN(Number(headingDeg))) {
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: []
+                });
+                if (pulseSource) {
+                    pulseSource.setData({
+                        type: 'FeatureCollection',
+                        features: []
+                    });
+                }
+                if (_pulseAnimationFrame) {
+                    cancelAnimationFrame(_pulseAnimationFrame);
+                    _pulseAnimationFrame = null;
+                }
+                _pulseStartTime = null;
+                return;
+            }
+
+            var radius = calculateConeRadius();
+            var headingNum = Number(headingDeg);
+
+            setHeadingConeData(source, lng, lat, headingNum, radius);
+
+            // Start pulse animation
+            if (!_pulseStartTime) {
+                _pulseStartTime = Date.now();
+            }
+            if (!_pulseAnimationFrame) {
+                animatePulse();
+            }
+        }
+
+        function animatePulse() {
+            _pulseAnimationFrame = null;
+            if (_lastHeadingDeg == null || !_lastUserLngLat || _lastUserLngLat.length < 2) {
+                return;
+            }
+
+            var lng = _lastUserLngLat[0];
+            var lat = _lastUserLngLat[1];
+            var headingDeg = Number(_lastHeadingDeg);
+            var baseRadius = calculateConeRadius();
+            var pulseSource = map.getSource('user-heading-pulse');
+            var source = map.getSource('user-heading-source');
+            var pulseLayer = map.getLayer('user-heading-pulse');
+            if (!pulseSource || !pulseLayer || !source) return;
+
+            var pulseDuration = 2000; // 2 seconds per pulse
+            var elapsed = (Date.now() - _pulseStartTime) % pulseDuration;
+            var progress = elapsed / pulseDuration;
+
+            // Pulse expands from 1x to 1.8x radius
+            var pulseRadius = baseRadius * (1 + progress * 0.8);
+            // Opacity fades from 0.18 to 0
+            var pulseOpacity = 0.18 * (1 - progress);
+
+            setHeadingConeData(source, lng, lat, headingDeg, baseRadius);
+            setHeadingConeData(pulseSource, lng, lat, headingDeg, pulseRadius);
+
+            map.setPaintProperty('user-heading-pulse', 'fill-opacity', pulseOpacity);
+
+            _pulseAnimationFrame = requestAnimationFrame(function() {
+                animatePulse();
+            });
+        }
+
         var trackingInitialized = false;
         var pendingStartTracking = false;
         var pickMode = false;
-        var _pressTimer = null;
-        var _touchStart = null;
-        var _touchMoved = false;
 
         function clearLiveRouteGraphics() {
             routeCoords = [];
@@ -110,8 +307,6 @@
 
             if (map.getLayer('end-dot')) map.removeLayer('end-dot');
             if (map.getSource('end-dot')) map.removeSource('end-dot');
-
-            console.log('[Tracking] Route cleared');
         }
 
         function startTracking() {
@@ -120,7 +315,6 @@
                 return;
             }
             clearLiveRouteGraphics();
-            console.log('[Tracking] Started — ready for coordinates');
         }
 
         function resetTracking() {
@@ -130,6 +324,9 @@
         function clearPlannedRoute() {
             try {
                 if (!trackingInitialized) return;
+                _plannedRouteCoords = [];
+                _plannedDestLng = null;
+                _plannedDestLat = null;
                 map.getSource('planned-route').setData({
                     type: 'Feature',
                     geometry: { type: 'LineString', coordinates: [] }
@@ -138,31 +335,18 @@
                     type: 'Feature',
                     geometry: { type: 'Point', coordinates: [] }
                 });
-            } catch (e) { console.warn('[map] clearPlannedRoute', e); }
+            } catch (e) { }
         }
 
-        /** Pending route if user picks a destination before map layers are ready */
         var _pendingPlannedBase64 = null;
         var _pendingPlannedDestLng = 0;
         var _pendingPlannedDestLat = 0;
 
-        function getGeoJsonData(sourceId) {
-            try {
-                var src = map.getSource(sourceId);
-                if (!src || src.type !== 'geojson') return null;
-                if (typeof src.serialize === 'function') {
-                    var s = src.serialize();
-                    return (s && s.data) ? s : null;
-                }
-                return src._data || null;
-            } catch (e) {
-                console.warn('[map] getGeoJsonData', sourceId, e);
-                return null;
-            }
-        }
-
         function applyPlannedRouteCoords(coords, destLng, destLat) {
             if (!coords || coords.length < 2) return;
+            _plannedRouteCoords = coords.slice();
+            _plannedDestLng = destLng;
+            _plannedDestLat = destLat;
             map.getSource('planned-route').setData({
                 type: 'Feature',
                 geometry: { type: 'LineString', coordinates: coords }
@@ -176,7 +360,6 @@
             map.fitBounds(b, { padding: 70, duration: 350 });
         }
 
-        /** Base64-encoded JSON array [[lng,lat], ...] — avoids fragile string escaping in the native bridge */
         function setPlannedRouteFromBase64(b64, destLng, destLat) {
             if (!b64) return;
             try {
@@ -192,7 +375,6 @@
                 }
                 applyPlannedRouteCoords(coords, destLng, destLat);
             } catch (e) {
-                console.error('[map] setPlannedRouteFromBase64', e);
             }
         }
 
@@ -206,7 +388,7 @@
                 var json = atob(b64);
                 var coords = JSON.parse(json);
                 applyPlannedRouteCoords(coords, lng, lat);
-            } catch (e) { console.error('[map] flushPendingPlannedRoute', e); }
+            } catch (e) { }
         }
 
         function setDestinationPickMode(enabled) {
@@ -214,8 +396,8 @@
         }
 
         function wirePickListeners() {
-            var canvas = map.getCanvas();
-
+            if (_pickListenersWired) return;
+            _pickListenersWired = true;
             var _longPressTimer = null;
             var _touchMoved = false;
 
@@ -230,16 +412,16 @@
                 }, 480);
             });
 
-            map.on('touchmove', function (e) {
+            map.on('touchmove', function () {
                 _touchMoved = true;
                 clearTimeout(_longPressTimer);
             });
 
-            map.on('touchend', function (e) {
+            map.on('touchend', function () {
                 clearTimeout(_longPressTimer);
             });
-            
-            map.on('touchcancel', function (e) {
+
+            map.on('touchcancel', function () {
                 clearTimeout(_longPressTimer);
             });
 
@@ -250,83 +432,171 @@
             });
         }
 
+        function ensurePlannedRouteLayers() {
+            if (!map.getSource('planned-route')) {
+                map.addSource('planned-route', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
+                });
+            }
+
+            if (!map.getLayer('planned-route-outline')) {
+                map.addLayer({
+                    id: 'planned-route-outline',
+                    type: 'line',
+                    source: 'planned-route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#2B1106',
+                        'line-width': 11,
+                        'line-opacity': 0.94
+                    }
+                });
+            }
+
+            if (!map.getLayer('planned-route')) {
+                map.addLayer({
+                    id: 'planned-route',
+                    type: 'line',
+                    source: 'planned-route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#FC5200',
+                        'line-width': 6.5,
+                        'line-opacity': 0.96
+                    }
+                });
+            }
+
+            if (!map.getSource('destination')) {
+                map.addSource('destination', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
+                });
+            }
+
+            if (!map.getLayer('destination')) {
+                map.addLayer({
+                    id: 'destination',
+                    type: 'circle',
+                    source: 'destination',
+                    paint: {
+                        'circle-radius': 9,
+                        'circle-color': '#FC5200',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#FFF7ED'
+                    }
+                });
+            }
+        }
+
+        function ensureLiveRouteLayers() {
+            if (!map.getSource('live-route')) {
+                map.addSource('live-route', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
+                });
+            }
+
+            if (!map.getLayer('live-route-glow')) {
+                map.addLayer({
+                    id: 'live-route-glow',
+                    type: 'line',
+                    source: 'live-route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#2B1106',
+                        'line-width': 12,
+                        'line-opacity': 0.96
+                    }
+                });
+            }
+
+            if (!map.getLayer('live-route')) {
+                map.addLayer({
+                    id: 'live-route',
+                    type: 'line',
+                    source: 'live-route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#FC5200',
+                        'line-width': 7,
+                        'line-opacity': 0.98
+                    }
+                });
+            }
+        }
+
+        function ensureStartDotLayer() {
+            if (!map.getSource('start-dot')) {
+                map.addSource('start-dot', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
+                });
+            }
+
+            if (!map.getLayer('start-dot')) {
+                map.addLayer({
+                    id: 'start-dot',
+                    type: 'circle',
+                    source: 'start-dot',
+                    paint: {
+                        'circle-radius': 9,
+                        'circle-color': '#00C853',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#FFFFFF'
+                    }
+                });
+            }
+        }
+
+        function restoreMapStateAfterStyleLoad() {
+            ensureUserHeadingLayers();
+            ensurePlannedRouteLayers();
+            ensureLiveRouteLayers();
+            ensureStartDotLayer();
+
+            if (_lastUserLngLat && _lastUserLngLat.length >= 2) {
+                userMarker.setLngLat(_lastUserLngLat);
+                updateUserHeadingCone(_lastUserLngLat[0], _lastUserLngLat[1], _lastHeadingDeg);
+            }
+
+            if (_plannedRouteCoords && _plannedRouteCoords.length > 1 && _plannedDestLng != null && _plannedDestLat != null) {
+                map.getSource('planned-route').setData({
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: _plannedRouteCoords }
+                });
+                map.getSource('destination').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [_plannedDestLng, _plannedDestLat] }
+                });
+            }
+
+            if (routeCoords && routeCoords.length > 0) {
+                map.getSource('live-route').setData({
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: routeCoords }
+                });
+                map.getSource('start-dot').setData({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: routeCoords[0] }
+                });
+            }
+
+            if (_is3D) {
+                if (!map.getSource('mapbox-dem')) {
+                    map.addSource('mapbox-dem', {
+                        type: 'raster-dem',
+                        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                        tileSize: 512
+                    });
+                }
+                map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+            }
+        }
+
         map.on('load', () => {
-            console.log('[DEBUG] Map loaded and resized');
-
-            map.addSource('planned-route', {
-                type: 'geojson',
-                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
-            });
-            map.addLayer({
-                id: 'planned-route',
-                type: 'line',
-                source: 'planned-route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': '#38BDF8',
-                    'line-width': 5,
-                    'line-opacity': 0.95
-                }
-            });
-
-            map.addSource('destination', {
-                type: 'geojson',
-                data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
-            });
-            map.addLayer({
-                id: 'destination',
-                type: 'circle',
-                source: 'destination',
-                paint: {
-                    'circle-radius': 10,
-                    'circle-color': '#F472B6',
-                    'circle-stroke-width': 3,
-                    'circle-stroke-color': '#FFFFFF'
-                }
-            });
-
-            map.addSource('live-route', {
-                type: 'geojson',
-                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
-            });
-            map.addLayer({
-                id: 'live-route-glow',
-                type: 'line',
-                source: 'live-route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': '#39FF14',
-                    'line-width': 18,
-                    'line-opacity': 0.42
-                }
-            });
-            map.addLayer({
-                id: 'live-route',
-                type: 'line',
-                source: 'live-route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': '#00F5FF',
-                    'line-width': 8,
-                    'line-opacity': 1.0
-                }
-            });
-
-            map.addSource('start-dot', {
-                type: 'geojson',
-                data: { type: 'Feature', geometry: { type: 'Point', coordinates: [] } }
-            });
-            map.addLayer({
-                id: 'start-dot',
-                type: 'circle',
-                source: 'start-dot',
-                paint: {
-                    'circle-radius': 9,
-                    'circle-color': '#00C853',
-                    'circle-stroke-width': 3,
-                    'circle-stroke-color': '#FFFFFF'
-                }
-            });
+            restoreMapStateAfterStyleLoad();
 
             trackingInitialized = true;
             wirePickListeners();
@@ -335,9 +605,13 @@
             if (pendingStartTracking) {
                 pendingStartTracking = false;
                 clearLiveRouteGraphics();
-                console.log('[Tracking] Flushed pending start');
             }
             try { window.location.href = 'https://fitnessapp.local/map-ready'; } catch (e) { }
+        });
+
+        map.on('style.load', function () {
+            if (!trackingInitialized) return;
+            restoreMapStateAfterStyleLoad();
         });
 
         window.addEventListener('resize', () => {
@@ -351,12 +625,50 @@
             .setLngLat([__START_LNG__, __START_LAT__])
             .addTo(map);
 
-        function updateUserLocation(lng, lat) {
-            userMarker.setLngLat([lng, lat]);
-            map.easeTo({ center: [lng, lat], zoom: 16, duration: 300 });
+        function centerOnUser(lng, lat) {
+            syncUserLocation(lng, lat, null, true);
         }
 
-        /** Max points kept for rendering — long sessions decimate to keep setData cheap. */
+        function updateUserLocation(lng, lat) {
+            syncUserLocation(lng, lat, null, true);
+        }
+
+        function syncUserLocation(lng, lat, headingDeg, followCamera) {
+            _lastUserLngLat = [lng, lat];
+            if (headingDeg != null && !isNaN(Number(headingDeg))) {
+                _lastHeadingDeg = Number(headingDeg);
+            }
+            userMarker.setLngLat([lng, lat]);
+            updateUserHeadingCone(lng, lat, _lastHeadingDeg);
+            if (followCamera) {
+                map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15), duration: 300 });
+            }
+        }
+
+        function changeMapStyle(styleString) {
+            if (!styleString || styleString === _currentStyle) return;
+            _currentStyle = styleString;
+            map.setStyle('mapbox://styles/mapbox/' + styleString);
+        }
+
+        function toggle3D(enable) {
+            _is3D = !!enable;
+            if (_is3D) {
+                if (!map.getSource('mapbox-dem')) {
+                    map.addSource('mapbox-dem', {
+                        type: 'raster-dem',
+                        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                        tileSize: 512
+                    });
+                }
+                map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+                map.easeTo({ pitch: 60, duration: 700 });
+            } else {
+                map.setTerrain(null);
+                map.easeTo({ pitch: 0, duration: 700 });
+            }
+        }
+
         var ROUTE_COORDS_MAX_RENDER = 4500;
 
         function decimateRouteCoordsInPlace() {
@@ -372,18 +684,15 @@
             routeCoords = out;
         }
 
-        /** Batch append for fewer native↔WebView calls (see RecordPage flush interval). */
         function addCoordinatesBatch(coordsJson) {
             if (!trackingInitialized) return;
             try {
                 var arr = JSON.parse(coordsJson);
                 applyCoordinatePoints(arr);
             } catch (e) {
-                console.error('[map] addCoordinatesBatch', e);
             }
         }
 
-        /** Same as addCoordinatesBatch but payload is base64 UTF-8 JSON — avoids fragile escaping from native. */
         function addCoordinatesBatchFromBase64(b64) {
             if (!trackingInitialized || !b64) return;
             try {
@@ -391,7 +700,6 @@
                 var arr = JSON.parse(json);
                 applyCoordinatePoints(arr);
             } catch (e) {
-                console.error('[map] addCoordinatesBatchFromBase64', e);
             }
         }
 
@@ -487,7 +795,6 @@
                     map.easeTo({ center: routeCoords[0], zoom: 16, duration: 300 });
                 }
             } catch (e) {
-                console.error('[map] showRecordedRouteFromBase64', e);
             }
         }
 
@@ -527,8 +834,6 @@
 
                 map.fitBounds(bounds, { padding: 80, duration: 400 });
             }
-
-            console.log('[Tracking] Stopped. Total coords: ' + routeCoords.length);
         }
     </script>
 </body>

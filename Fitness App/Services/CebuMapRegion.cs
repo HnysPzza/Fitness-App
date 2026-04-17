@@ -5,16 +5,16 @@ namespace Fitness_App.Services;
 /// <summary>Metro Cebu / Central Visayas search bounds (Mapbox bbox: minLng,minLat,maxLng,maxLat).</summary>
 public static class CebuMapRegion
 {
-    public const double MinLng = 123.55;
-    public const double MinLat = 10.08;
-    public const double MaxLng = 124.15;
-    public const double MaxLat = 10.65;
+    public const double MinLng = 123.25;
+    public const double MinLat = 9.35;
+    public const double MaxLng = 124.30;
+    public const double MaxLat = 11.35;
 
     /// <summary>Max distance from user to suggested destination (km).</summary>
-    public const double MaxSuggestedRouteKm = 42.0;
+    public const double MaxSuggestedRouteKm = 180.0;
 
     /// <summary>Max distance from proximity point for popular POIs (km).</summary>
-    public const double MaxPopularPoiKm = 35.0;
+    public const double MaxPopularPoiKm = 180.0;
 
     public static string BboxQueryString =>
         string.Format(CultureInfo.InvariantCulture,

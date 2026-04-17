@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Fitness_App.Models;
+using Microsoft.Maui.Storage;
 
 namespace Fitness_App.Services
 {
@@ -10,27 +10,52 @@ namespace Fitness_App.Services
 
     public sealed class SuggestedLocationsService : ISuggestedLocationsService
     {
-        private readonly IReadOnlyList<SuggestedLocation> _locations;
+        private readonly Random _random = new();
 
         public SuggestedLocationsService()
         {
-            _locations = LoadFromJson();
         }
 
-        public IReadOnlyList<SuggestedLocation> GetAll() => _locations;
-
-        private static IReadOnlyList<SuggestedLocation> LoadFromJson()
+        public IReadOnlyList<SuggestedLocation> GetAll()
         {
-            var json = @"[
-  { ""name"": ""Naga Boardwalk"", ""distanceKm"": 2.1, ""estimatedMinutes"": 18, ""image"": ""dotnet_bot.png"" },
-  { ""name"": ""Freedom Park Loop"", ""distanceKm"": 3.6, ""estimatedMinutes"": 30, ""image"": ""dotnet_bot.png"" },
-  { ""name"": ""Riverside Trail"", ""distanceKm"": 5.2, ""estimatedMinutes"": 45, ""image"": ""dotnet_bot.png"" }
-]";
+            double originLng = Preferences.Default.Get("last_lng", 123.900);
+            double originLat = Preferences.Default.Get("last_lat", 10.315);
+            var allLocations = LoadFromCatalog(originLng, originLat)
+                .Where(location => location.DistanceKm <= CebuMapRegion.MaxSuggestedRouteKm)
+                .ToList();
 
-            return JsonSerializer.Deserialize<List<SuggestedLocation>>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }) ?? new List<SuggestedLocation>();
+            var count = Math.Min(allLocations.Count, _random.Next(8, 13));
+            return allLocations
+                .OrderBy(_ => _random.Next())
+                .Take(count)
+                .ToList();
+        }
+
+        private static IReadOnlyList<SuggestedLocation> LoadFromCatalog(double approximateOriginLng, double approximateOriginLat)
+        {
+            return SuggestedRoutesCatalog.Seeds
+                .Select(seed =>
+                {
+                    double distanceKm = CebuMapRegion.DistanceKm(approximateOriginLng, approximateOriginLat, seed.DestLng, seed.DestLat);
+                    double minutesPerKm = string.Equals(seed.DirectionsProfile, "cycling", StringComparison.OrdinalIgnoreCase)
+                        ? 3.8
+                        : string.Equals(seed.DirectionsProfile, "driving", StringComparison.OrdinalIgnoreCase)
+                            ? 1.4
+                            : 12.0;
+
+                    return new SuggestedLocation
+                    {
+                        RouteId = seed.Id,
+                        Name = seed.Name,
+                        DistanceKm = Math.Max(1.0, Math.Round(distanceKm, 1)),
+                        EstimatedMinutes = Math.Max(8, (int)Math.Round(distanceKm * minutesPerKm)),
+                        Image = "dotnet_bot.png",
+                        DestLng = seed.DestLng,
+                        DestLat = seed.DestLat,
+                        DirectionsProfile = seed.DirectionsProfile
+                    };
+                })
+                .ToList();
         }
     }
 }

@@ -13,6 +13,15 @@ public static class ActivityPresentation
         _ => "🏃"
     };
 
+    public static string GetSportIcon(string sport) => sport switch
+    {
+        "Running" or "Run" or "Trail Run" or "Virtual Run" => Fitness_App.UI.Icons.MaterialSymbols.Directions_run,
+        "Cycling" or "Mountain Bike" or "Gravel Ride" or "E-Bike" or "E-Bike Ride" or "Road Ride" or "Commute" => Fitness_App.UI.Icons.MaterialSymbols.Pedal_bike,
+        "Walking" or "Walk" or "Hike" => Fitness_App.UI.Icons.MaterialSymbols.Directions_walk,
+        "Swimming (Open Water)" or "Pool Swim" or "Swim" => Fitness_App.UI.Icons.MaterialSymbols.Pool,
+        _ => Fitness_App.UI.Icons.MaterialSymbols.Directions_run
+    };
+
     public static Color GetBadgeColor(string sport) => sport switch
     {
         "Running" or "Run" or "Trail Run" or "Virtual Run" => Color.FromArgb("#FEF3C7"),

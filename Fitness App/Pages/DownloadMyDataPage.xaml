@@ -3,62 +3,81 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.DownloadMyDataPage"
              Title="Download My Data"
-             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+             BackgroundColor="#0B0F19">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24,40,24,40" Spacing="20">
+        <VerticalStackLayout Padding="16,18,16,40" Spacing="16">
 
-            <Label Text="📦" FontSize="72" HorizontalOptions="Center" />
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Download My Data"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="#F8FAFC" />
+                    <Label Text="Export your activities, routes, and profile data in a portable format whenever you need it."
+                           FontSize="13"
+                           TextColor="#94A3B8" />
+                </VerticalStackLayout>
+            </Border>
 
-            <Label Text="Export a copy of all your data including activities, routes, and profile info."
-                   FontSize="16"
-                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
-                   HorizontalOptions="Center"
-                   HorizontalTextAlignment="Center"
-                   LineBreakMode="WordWrap" />
+            <Border Padding="22"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="📦" FontSize="68" HorizontalOptions="Center" />
+                    <Label Text="Export a copy of all your data including activities, routes, and profile info."
+                           FontSize="16"
+                           TextColor="#F8FAFC"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           LineBreakMode="WordWrap" />
+                    <Label Text="You’ll receive a secure export once the request is prepared."
+                           FontSize="13"
+                           TextColor="#94A3B8"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- What's included -->
-            <Border StrokeThickness="0" Padding="16,14">
-                <Border.StrokeShape><RoundRectangle CornerRadius="12"/></Border.StrokeShape>
-                <Border.BackgroundColor>
-                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
-                </Border.BackgroundColor>
+            <Border Stroke="#243041" StrokeThickness="1" Padding="18" BackgroundColor="#111827">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="What's included:" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
-                    <Label Text="• Activity history" FontSize="14" TextColor="#9E9E9E" />
-                    <Label Text="• GPS routes" FontSize="14" TextColor="#9E9E9E" />
-                    <Label Text="• Profile information" FontSize="14" TextColor="#9E9E9E" />
-                    <Label Text="• Personal records" FontSize="14" TextColor="#9E9E9E" />
+                    <Label Text="What's included:" FontSize="15" FontAttributes="Bold" TextColor="#F8FAFC" />
+                    <Label Text="• Activity history" FontSize="14" TextColor="#CBD5E1" />
+                    <Label Text="• GPS routes" FontSize="14" TextColor="#CBD5E1" />
+                    <Label Text="• Profile information" FontSize="14" TextColor="#CBD5E1" />
+                    <Label Text="• Personal records" FontSize="14" TextColor="#CBD5E1" />
                 </VerticalStackLayout>
             </Border>
 
             <!-- Format Selector -->
-            <Border StrokeThickness="0" Padding="16,14">
-                <Border.StrokeShape><RoundRectangle CornerRadius="12"/></Border.StrokeShape>
-                <Border.BackgroundColor>
-                    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
-                </Border.BackgroundColor>
+            <Border Stroke="#243041" StrokeThickness="1" Padding="18" BackgroundColor="#111827">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Format" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+                    <Label Text="Format" FontSize="15" FontAttributes="Bold" TextColor="#F8FAFC" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <Border Grid.Column="0" x:Name="JsonBorder"
-                                StrokeThickness="2" Stroke="#FC5200" Padding="0" HeightRequest="44">
-                            <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                StrokeThickness="2" Stroke="#FC5200" Padding="0" HeightRequest="48" BackgroundColor="#0F172A">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14"/></Border.StrokeShape>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnFormatSelected" CommandParameter="JSON" />
                             </Border.GestureRecognizers>
                             <Label Text="JSON" FontSize="15" FontAttributes="Bold" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <Border Grid.Column="1" x:Name="CsvBorder"
-                                StrokeThickness="2" Padding="0" HeightRequest="44">
-                            <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
-                            <Border.Stroke>
-                                <AppThemeBinding Light="#E0E0E0" Dark="#444444"/>
-                            </Border.Stroke>
+                                StrokeThickness="2" Padding="0" HeightRequest="48" Stroke="#243041" BackgroundColor="#0F172A">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14"/></Border.StrokeShape>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnFormatSelected" CommandParameter="CSV" />
                             </Border.GestureRecognizers>
-                            <Label Text="CSV" FontSize="15" FontAttributes="Bold" TextColor="#9E9E9E" HorizontalOptions="Center" VerticalOptions="Center" />
+                            <Label Text="CSV" FontSize="15" FontAttributes="Bold" TextColor="#94A3B8" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                     </Grid>
                 </VerticalStackLayout>
@@ -71,13 +90,13 @@
                     TextColor="White"
                     FontAttributes="Bold"
                     FontSize="16"
-                    CornerRadius="12"
+                    CornerRadius="16"
                     HeightRequest="52"
                     Margin="0,8,0,0" />
 
             <Label Text="You'll receive an email when your export is ready."
                    FontSize="13"
-                   TextColor="#9E9E9E"
+                   TextColor="#94A3B8"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center" />
 

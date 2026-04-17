@@ -3,110 +3,153 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.LinkedAppsPage"
              Title="Linked Apps"
-             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+             BackgroundColor="#0B0F19">
 
     <ContentPage.Resources>
         <Style x:Key="SectionHeaderStyle" TargetType="Label">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="TextColor" Value="#9E9E9E" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextColor" Value="#64748B" />
             <Setter Property="FontAttributes" Value="Bold" />
-            <Setter Property="Padding" Value="16,20,16,8" />
+            <Setter Property="Padding" Value="0,0,0,8" />
+            <Setter Property="CharacterSpacing" Value="1.2" />
             <Setter Property="TextTransform" Value="Uppercase" />
         </Style>
         <Style x:Key="DividerStyle" TargetType="BoxView">
-            <Setter Property="HeightRequest" Value="0.5" />
-            <Setter Property="Color" Value="#E0E0E0" />
-            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="HeightRequest" Value="1" />
+            <Setter Property="Color" Value="#162033" />
+            <Setter Property="Margin" Value="18,0,18,0" />
         </Style>
     </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout Padding="0,0,0,40">
+        <VerticalStackLayout Padding="16,18,16,40" Spacing="16">
+
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Linked Apps"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="#F8FAFC" />
+                    <Label Text="Manage the external health and fitness platforms connected to your account."
+                           FontSize="13"
+                           TextColor="#94A3B8" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- CONNECTED -->
             <Label Text="Connected" Style="{StaticResource SectionHeaderStyle}" />
-            <BoxView Style="{StaticResource DividerStyle}" />
 
-            <Grid Padding="16,0" HeightRequest="64">
+            <Border Padding="0"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+
+            <Grid Padding="18,14" MinimumHeightRequest="76">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Text="🍎" FontSize="28" VerticalOptions="Center" Margin="0,0,12,0" />
-                <Label Grid.Column="1" Text="Apple Health" FontSize="16" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Apple Health" FontSize="16" FontAttributes="Bold" TextColor="#F8FAFC" VerticalOptions="Center" />
+                    <Label Text="Currently syncing workouts and wellness data" FontSize="13" TextColor="#94A3B8" />
+                </VerticalStackLayout>
                 <Button Grid.Column="2" Text="Unlink" Clicked="OnUnlinkAppleHealth"
                         BackgroundColor="Transparent"
                         TextColor="#E53935"
                         BorderColor="#E53935"
                         BorderWidth="1"
-                        CornerRadius="8"
+                        CornerRadius="14"
                         FontSize="13"
-                        HeightRequest="36"
-                        Padding="12,0" />
+                        HeightRequest="40"
+                        Padding="14,0" />
             </Grid>
-            <BoxView Style="{StaticResource DividerStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- AVAILABLE TO CONNECT -->
             <Label Text="Available to Connect" Style="{StaticResource SectionHeaderStyle}" />
-            <BoxView Style="{StaticResource DividerStyle}" />
 
-            <Grid Padding="16,0" HeightRequest="64">
+            <Border Padding="0"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+
+            <Grid Padding="18,14" MinimumHeightRequest="76">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Text="🟢" FontSize="24" VerticalOptions="Center" Margin="0,0,12,0" />
-                <Label Grid.Column="1" Text="Google Fit" FontSize="16" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Google Fit" FontSize="16" FontAttributes="Bold" TextColor="#F8FAFC" VerticalOptions="Center" />
+                    <Label Text="Sync daily activity and health stats" FontSize="13" TextColor="#94A3B8" />
+                </VerticalStackLayout>
                 <Button Grid.Column="2" Text="Link" Clicked="OnLinkApp"
                         CommandParameter="Google Fit"
                         BackgroundColor="#FC5200"
                         TextColor="White"
-                        CornerRadius="8"
+                        CornerRadius="14"
                         FontSize="13"
-                        HeightRequest="36"
-                        Padding="12,0" />
+                        HeightRequest="40"
+                        Padding="14,0" />
             </Grid>
             <BoxView Style="{StaticResource DividerStyle}" />
 
-            <Grid Padding="16,0" HeightRequest="64">
+            <Grid Padding="18,14" MinimumHeightRequest="76">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Text="🟠" FontSize="24" VerticalOptions="Center" Margin="0,0,12,0" />
-                <Label Grid.Column="1" Text="Strava" FontSize="16" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Strava" FontSize="16" FontAttributes="Bold" TextColor="#F8FAFC" VerticalOptions="Center" />
+                    <Label Text="Push completed activities to your social feed" FontSize="13" TextColor="#94A3B8" />
+                </VerticalStackLayout>
                 <Button Grid.Column="2" Text="Link" Clicked="OnLinkApp"
                         CommandParameter="Strava"
                         BackgroundColor="#FC5200"
                         TextColor="White"
-                        CornerRadius="8"
+                        CornerRadius="14"
                         FontSize="13"
-                        HeightRequest="36"
-                        Padding="12,0" />
+                        HeightRequest="40"
+                        Padding="14,0" />
             </Grid>
             <BoxView Style="{StaticResource DividerStyle}" />
 
-            <Grid Padding="16,0" HeightRequest="64">
+            <Grid Padding="18,14" MinimumHeightRequest="76">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Text="⌚" FontSize="24" VerticalOptions="Center" Margin="0,0,12,0" />
-                <Label Grid.Column="1" Text="Garmin Connect" FontSize="16" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Garmin Connect" FontSize="16" FontAttributes="Bold" TextColor="#F8FAFC" VerticalOptions="Center" />
+                    <Label Text="Bring over training metrics and device sessions" FontSize="13" TextColor="#94A3B8" />
+                </VerticalStackLayout>
                 <Button Grid.Column="2" Text="Link" Clicked="OnLinkApp"
                         CommandParameter="Garmin Connect"
                         BackgroundColor="#FC5200"
                         TextColor="White"
-                        CornerRadius="8"
+                        CornerRadius="14"
                         FontSize="13"
-                        HeightRequest="36"
-                        Padding="12,0" />
+                        HeightRequest="40"
+                        Padding="14,0" />
             </Grid>
-            <BoxView Style="{StaticResource DividerStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>

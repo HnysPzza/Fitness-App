@@ -6,9 +6,35 @@
     xmlns:local="clr-namespace:Fitness_App"
     xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
     xmlns:pages="clr-namespace:Fitness_App.Pages"
-    Title="Fitness_App">
+    Title="Fitness_App"
+    FlyoutBehavior="Disabled">
 
-    <TabBar>
+    <ShellContent
+        Title="Loading"
+        Route="loading"
+        ContentTemplate="{DataTemplate pages:LoadingPage}" />
+
+    <ShellContent
+        Title="Login"
+        Route="login"
+        ContentTemplate="{DataTemplate pages:LoginPage}" />
+
+    <ShellContent
+        Title="Register"
+        Route="register"
+        ContentTemplate="{DataTemplate pages:RegisterPage}" />
+
+    <ShellContent
+        Title="Email Verification"
+        Route="emailverification"
+        ContentTemplate="{DataTemplate pages:EmailVerificationPage}" />
+
+    <ShellContent
+        Title="Profile Setup"
+        Route="profilesetup"
+        ContentTemplate="{DataTemplate pages:ProfileSetupPage}" />
+
+    <TabBar Route="main">
         <ShellContent
             Title="Home"
             Route="home"

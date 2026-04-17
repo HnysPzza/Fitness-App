@@ -198,7 +198,7 @@ public sealed class MapboxRoutingService : IMapboxRoutingService
     {
         var candidates = await GeocodeAsync(query, proximityLng, proximityLat, cancellationToken).ConfigureAwait(false);
         return candidates
-            .Where(f => CebuMapRegion.DistanceKm(approximateLng, approximateLat, f.Lng, f.Lat) <= 8.0)
+            .Where(f => CebuMapRegion.DistanceKm(approximateLng, approximateLat, f.Lng, f.Lat) <= 20.0)
             .OrderByDescending(f => ScoreDestinationResolution(query, f.PlaceName, f.Lng, f.Lat, approximateLng, approximateLat))
             .FirstOrDefault()
             ?? candidates.FirstOrDefault();

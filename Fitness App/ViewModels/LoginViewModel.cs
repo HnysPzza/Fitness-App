@@ -98,6 +98,8 @@ public partial class LoginViewModel : ObservableObject
                 // Navigate to Home via Shell routing.
                 // The // prefix resets the navigation stack so Back won’t return to Login.
                 await Shell.Current.GoToAsync("//home");
+                await Task.Delay(150);
+                await NotificationNavigationService.HandlePendingAsync();
             }
             else
             {

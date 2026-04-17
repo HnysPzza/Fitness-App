@@ -4,345 +4,464 @@
              xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
              xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
              x:Class="Fitness_App.Pages.RecordPage"
-             Title="Record"
-             BackgroundColor="Transparent"
+             BackgroundColor="#000000"
              NavigationPage.HasNavigationBar="False"
              Shell.NavBarIsVisible="False">
 
-    <!--
-        ROOT: AbsoluteLayout lets us layer:
-          [0] Map (full screen behind everything)
-          [1] Top gradient scrim (readability)
-          [2] Top bar (transparent, floats over map)
-          [3] Bottom sheet (anchored to bottom edge)
-          [4] Expanded sport sheet (slides up over everything)
-    -->
-    <AbsoluteLayout IsClippedToBounds="True">
+    <Grid>
+        <!-- LAYER 0 - Map -->
+        <WebView x:Name="MapWebView" />
 
-        <!-- ═══════════════════════════════════════════════════════════
-             LAYER 0 — Simulated Map (full-screen background)
-             When Mapbox SDK is added, replace this with MapboxMapView
-             LayoutBounds="0,0,1,1" LayoutFlags="All"
-             ════════════════════════════════════════════════════════════ -->
-        <Grid x:Name="MapLayer"
-              AbsoluteLayout.LayoutBounds="0,0,1,1"
-              AbsoluteLayout.LayoutFlags="All">
-
-            <!-- Dark map base -->
-            <BoxView BackgroundColor="#0F1923" />
-
-            <!-- Subtle grid lines simulating map road network -->
-            <!-- Horizontal roads -->
-            <BoxView BackgroundColor="#1A2535" HeightRequest="2" VerticalOptions="Start" Margin="0,120,0,0" />
-            <BoxView BackgroundColor="#1A2535" HeightRequest="2" VerticalOptions="Start" Margin="0,200,0,0" />
-            <BoxView BackgroundColor="#1E2D3E" HeightRequest="3" VerticalOptions="Start" Margin="0,280,0,0" />
-            <BoxView BackgroundColor="#1A2535" HeightRequest="2" VerticalOptions="Start" Margin="0,360,0,0" />
-            <BoxView BackgroundColor="#1A2535" HeightRequest="2" VerticalOptions="Start" Margin="60,440,60,0" />
-
-            <!-- Vertical roads -->
-            <BoxView BackgroundColor="#1A2535" WidthRequest="2" HorizontalOptions="Start" Margin="80,0,0,0" />
-            <BoxView BackgroundColor="#1E2D3E" WidthRequest="3" HorizontalOptions="Start" Margin="180,0,0,0" />
-            <BoxView BackgroundColor="#1A2535" WidthRequest="2" HorizontalOptions="Start" Margin="260,0,0,0" />
-            <BoxView BackgroundColor="#1E2D3E" WidthRequest="3" HorizontalOptions="End" Margin="0,0,80,0" />
-            <BoxView BackgroundColor="#1A2535" WidthRequest="2" HorizontalOptions="End" Margin="0,0,180,0" />
-
-            <!-- Diagonal road accent -->
-            <BoxView BackgroundColor="#192230" HeightRequest="2" Rotation="-35"
-                     VerticalOptions="Center" HorizontalOptions="Fill" Margin="-60,0,-60,60" />
-            <BoxView BackgroundColor="#192230" HeightRequest="2" Rotation="20"
-                     VerticalOptions="Center" HorizontalOptions="Fill" Margin="-60,-120,-60,0" />
-
-            <!-- Water body accent (dark blue patch) -->
-            <Border BackgroundColor="#0D1F35" StrokeThickness="0" WidthRequest="160" HeightRequest="80"
-                    HorizontalOptions="End" VerticalOptions="Start" Margin="0,180,40,0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="40" />
-                </Border.StrokeShape>
-            </Border>
-
-            <!-- Park/green area -->
-            <Border BackgroundColor="#0E1F18" StrokeThickness="0" WidthRequest="120" HeightRequest="60"
-                    HorizontalOptions="Start" VerticalOptions="Start" Margin="40,300,0,0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="8" />
-                </Border.StrokeShape>
-            </Border>
-
-            <!-- User location pulsing rings -->
-            <Ellipse x:Name="PulseRing2" WidthRequest="80" HeightRequest="80"
-                     Fill="Transparent" Stroke="#332563EB" StrokeThickness="2"
-                     HorizontalOptions="Center" VerticalOptions="Center"
-                     TranslationY="-60" />
-            <Ellipse x:Name="PulseRing1" WidthRequest="50" HeightRequest="50"
-                     Fill="Transparent" Stroke="#662563EB" StrokeThickness="2"
-                     HorizontalOptions="Center" VerticalOptions="Center"
-                     TranslationY="-60" />
-            <Ellipse WidthRequest="16" HeightRequest="16" Fill="#2563EB"
-                     HorizontalOptions="Center" VerticalOptions="Center"
-                     TranslationY="-60" />
-            <Ellipse WidthRequest="8" HeightRequest="8" Fill="White"
-                     HorizontalOptions="Center" VerticalOptions="Center"
-                     TranslationY="-60" />
-
-        </Grid>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             LAYER 1 — Top scrim gradient (map readability)
-             ════════════════════════════════════════════════════════════ -->
-        <Border AbsoluteLayout.LayoutBounds="0,0,1,120"
-                AbsoluteLayout.LayoutFlags="WidthProportional"
-                StrokeThickness="0"
-                BackgroundColor="Transparent">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#CC000000" Offset="0.0"/>
-                    <GradientStop Color="#00000000" Offset="1.0"/>
-                </LinearGradientBrush>
-            </Border.Background>
-        </Border>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             LAYER 2 — Transparent top bar (floats over map)
-             ════════════════════════════════════════════════════════════ -->
-        <Grid AbsoluteLayout.LayoutBounds="0,0,1,88"
-              AbsoluteLayout.LayoutFlags="WidthProportional"
-              ColumnDefinitions="*, Auto"
-              Padding="20,40,20,0"
-              BackgroundColor="Transparent">
-
-            <Label Text="Record" FontSize="26" FontAttributes="Bold"
-                   TextColor="White" VerticalOptions="Center" />
-
-            <!-- Settings icon button -->
-            <Border Grid.Column="1" StrokeThickness="0"
-                    BackgroundColor="#441A1A2E"
-                    WidthRequest="40" HeightRequest="40"
-                    VerticalOptions="Center">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="20" />
-                </Border.StrokeShape>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnSettingsTapped" />
-                </Border.GestureRecognizers>
-                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Settings}"
-                                    FontSize="20" TextColor="White"
-                                    HorizontalOptions="Center" VerticalOptions="Center" />
-            </Border>
-        </Grid>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             LAYER 3 — COLLAPSED BOTTOM SHEET (anchored to screen bottom)
-             Height is driven by content (-1)
-             ════════════════════════════════════════════════════════════ -->
-        <Border x:Name="BottomSheet"
-                AbsoluteLayout.LayoutBounds="0,1,1,-1"
-                AbsoluteLayout.LayoutFlags="WidthProportional,YProportional"
-                BackgroundColor="#F21C1C2E"
-                Stroke="Transparent"
-                StrokeThickness="0"
-                Margin="0"
-                IsClippedToBounds="True">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="24,24,0,0" />
-            </Border.StrokeShape>
-            <Border.GestureRecognizers>
-                <PanGestureRecognizer PanUpdated="OnSheetPanUpdated" />
-            </Border.GestureRecognizers>
-
-            <VerticalStackLayout Spacing="10" Padding="16,12,16,0">
-
-                <!-- Drag handle -->
-                <BoxView HeightRequest="4" WidthRequest="36" CornerRadius="2"
-                         Color="#3A3A5C" HorizontalOptions="Center">
-                    <BoxView.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnDragHandleTapped" />
-                    </BoxView.GestureRecognizers>
-                </BoxView>
-
-                <!-- Selected sport label -->
-                <Label x:Name="SelectedSportNameLabel" Text="Run"
-                       TextColor="White" FontSize="20" FontAttributes="Bold"
-                       HorizontalOptions="Center" Margin="0,4,0,0">
-                    <Label.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnDragHandleTapped" />
-                    </Label.GestureRecognizers>
-                </Label>
-                <Label Text="Tap or drag to change sport"
-                       TextColor="#8888AA" FontSize="12"
-                       HorizontalOptions="Center" />
-
-                <!-- ─── Sport Pill Carousel (horizontal scroll) ─── -->
-                <CollectionView x:Name="PillCarousel"
-                                ItemsSource="{Binding RecentSports}"
-                                SelectionMode="Single"
-                                SelectionChanged="OnPillSelected"
-                                HeightRequest="44"
-                                Margin="0,4,0,0">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border StrokeThickness="0" HeightRequest="38" Padding="14,0" VerticalOptions="Center">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="19" />
-                                </Border.StrokeShape>
-                                <Border.Triggers>
-                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                        <Setter Property="BackgroundColor" Value="#FC4C02" />
-                                    </DataTrigger>
-                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="False">
-                                        <Setter Property="BackgroundColor" Value="#2A2A3E" />
-                                    </DataTrigger>
-                                </Border.Triggers>
-                                <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
-                                    <Label Text="{Binding Icon}" FontSize="15" VerticalOptions="Center" />
-                                    <Label Text="{Binding Name}" FontSize="13" FontAttributes="Bold"
-                                           TextColor="White" VerticalOptions="Center" />
-                                </HorizontalStackLayout>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-
-                <!-- ─── GPS Status ─── -->
-                <HorizontalStackLayout HorizontalOptions="Center" Spacing="6" Margin="0,4,0,0">
-                    <Label Text="GPS" FontSize="11" FontAttributes="Bold"
-                           TextColor="#64748B" VerticalOptions="Center" />
-                    <Ellipse x:Name="GpsDot1" WidthRequest="7" HeightRequest="7">
-                        <Ellipse.Fill><SolidColorBrush Color="#FF9800"/></Ellipse.Fill>
-                    </Ellipse>
-                    <Ellipse x:Name="GpsDot2" WidthRequest="7" HeightRequest="7">
-                        <Ellipse.Fill><SolidColorBrush Color="#FF9800"/></Ellipse.Fill>
-                    </Ellipse>
-                    <Ellipse x:Name="GpsDot3" WidthRequest="7" HeightRequest="7">
-                        <Ellipse.Fill><SolidColorBrush Color="#FF9800"/></Ellipse.Fill>
-                    </Ellipse>
-                    <Ellipse x:Name="GpsDot4" WidthRequest="7" HeightRequest="7">
-                        <Ellipse.Fill><SolidColorBrush Color="#2A2A3E"/></Ellipse.Fill>
-                    </Ellipse>
-                    <Label x:Name="GpsStatusLabel" Text="Searching..."
-                           FontSize="12" TextColor="#8888AA" VerticalOptions="Center" />
-                </HorizontalStackLayout>
-
-                <!-- ─── Record Button ─── -->
-                <!-- Grid layers: [0] glow behind, [1] button on top -->
-                <Grid HorizontalOptions="Center"
-                      WidthRequest="96" HeightRequest="96"
-                      Margin="0,8,0,0">
-
-                    <!-- Glow ring (shown when GPS ready) — renders BEHIND button -->
-                    <Ellipse x:Name="RecordButtonGlow"
-                             WidthRequest="96" HeightRequest="96"
-                             HorizontalOptions="Center"
-                             VerticalOptions="Center"
-                             Opacity="0">
-                        <Ellipse.Fill>
-                            <RadialGradientBrush>
-                                <GradientStop Color="#99FC4C02" Offset="0.3"/>
-                                <GradientStop Color="#00FC4C02" Offset="1.0"/>
-                            </RadialGradientBrush>
-                        </Ellipse.Fill>
-                    </Ellipse>
-
-                    <!-- Actual record button — renders ON TOP of glow -->
-                    <Border x:Name="RecordButton"
-                            WidthRequest="80" HeightRequest="80"
-                            HorizontalOptions="Center"
-                            VerticalOptions="Center"
-                            Stroke="Transparent"
-                            StrokeThickness="0"
-                            BackgroundColor="#3A3A4E"
-                            Opacity="0.6"
-                            IsClippedToBounds="True">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="40" />
-                        </Border.StrokeShape>
+        <!-- LAYER 1 - Top Bar & Scrim -->
+        <VerticalStackLayout VerticalOptions="Start" InputTransparent="True" ZIndex="1">
+            <Border StrokeThickness="0" BackgroundColor="Transparent" HeightRequest="90">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#99000000" Offset="0"/>
+                        <GradientStop Color="#00000000" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnDefinitions="*, Auto" Padding="20,44,20,0" VerticalOptions="Start">
+                    <Label Text="Record" FontSize="26" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" />
+                    <!-- Settings Button -->
+                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="#441A1A2E"
+                            WidthRequest="40" HeightRequest="40" VerticalOptions="Center" InputTransparent="False">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
                         <Border.GestureRecognizers>
-                            <TapGestureRecognizer x:Name="RecordTapGesture" Tapped="OnRecordTapped" />
+                            <TapGestureRecognizer Tapped="OnSettingsTapped" />
                         </Border.GestureRecognizers>
-                        <Label Text="▶" FontSize="30" FontAttributes="Bold"
-                               TextColor="#88FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Settings}"
+                                            FontSize="20" TextColor="White"
+                                            HorizontalOptions="Center" VerticalOptions="Center" />
                     </Border>
                 </Grid>
+            </Border>
+        </VerticalStackLayout>
 
-                <!-- ✅ KEY FIX — Transparent spacer above tab bar + safe area -->
-                <!-- HeightRequest set at runtime in code-behind for per-device accuracy -->
-                <BoxView x:Name="BottomSheetSpacer"
-                         Color="Transparent"
-                         BackgroundColor="Transparent"
-                         HeightRequest="{OnPlatform iOS=34, Android=16}" />
 
-            </VerticalStackLayout>
-        </Border>
 
-        <!-- ═══════════════════════════════════════════════════════════
-             LAYER 4 — EXPANDED SHEET (full sport picker, slides up)
-             Hidden by default, shown when user drags up or taps sport
-             ════════════════════════════════════════════════════════════ -->
-        <Border x:Name="ExpandedSheet"
-                AbsoluteLayout.LayoutBounds="0,1,1,0.65"
-                AbsoluteLayout.LayoutFlags="WidthProportional,HeightProportional,YProportional"
-                BackgroundColor="#F21C1C2E"
-                Stroke="Transparent"
-                StrokeThickness="0"
-                IsVisible="False">
+        <!-- LAYER 1.5 - Floating map controls -->
+        <VerticalStackLayout ZIndex="2" Spacing="12" Margin="0,-40,16,0"
+                             VerticalOptions="Center" HorizontalOptions="End" InputTransparent="False">
+            <!-- Map style button -->
+            <Border WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="#C0141414" Stroke="#14FFFFFF" StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="#000" Radius="12" Opacity="0.4" Offset="0,4" /></Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMapStyleTapped" />
+                </Border.GestureRecognizers>
+                <!-- Stack style map icon -->
+                <Path Data="M 2 6 L 12 2 L 22 6 L 12 10 Z  M 2 12 L 12 16 L 22 12 M 2 18 L 12 22 L 22 18"
+                      Fill="Transparent" Stroke="White" StrokeThickness="1.5"
+                      HorizontalOptions="Center" VerticalOptions="Center" WidthRequest="24" HeightRequest="24" />
+            </Border>
+
+            <!-- 3D toggle -->
+            <Border WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="#C0141414" Stroke="#14FFFFFF" StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="#000" Radius="12" Opacity="0.4" Offset="0,4" /></Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnThreeDTapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="-4" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Path x:Name="FloatingThreeDPath"
+                          Data="M 4 10 L 20 10 L 16 2 L 8 2 Z M 12 2 L 12 10 M 6 6 L 18 6"
+                          Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.5"
+                          WidthRequest="24" HeightRequest="12" Opacity="0.8" HorizontalOptions="Center" />
+                    <Label x:Name="FloatingThreeDLabel" Text="3D" FontSize="9" FontAttributes="Bold" TextColor="#FFFFFF" Opacity="0.6" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- LAYER 2 - Main UI bottom layer -->
+        <VerticalStackLayout VerticalOptions="End" Spacing="16" Margin="0,0,0,0" ZIndex="3">
+
+            <!-- Combined Stats Card (Matches Image Design) -->
+            <Border Margin="14,0,14,0" BackgroundColor="#22201D" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="#000" Radius="20" Opacity="0.4" Offset="0,8"/></Border.Shadow>
+
+                <VerticalStackLayout Spacing="0">
+                    <!-- GPS Header -->
+                    <Grid x:Name="GpsStatusRow" BackgroundColor="#062F5E" Padding="14,10" ColumnDefinitions="Auto,*" HeightRequest="44">
+                        <controls:IconLabel x:Name="GpsDot1" Text="{x:Static icons:MaterialSymbols.Signal_cellular_alt}"
+                                            FontSize="18" TextColor="#60A5FA" VerticalOptions="Center" />
+                        <Label x:Name="GpsStatusLabel" Grid.Column="1" Text="Searching for GPS..."
+                               FontSize="14" FontAttributes="Bold" TextColor="#93C5FD"
+                               VerticalOptions="Center" Margin="8,0,0,0" />
+                    </Grid>
+
+                    <!-- Stats Row -->
+                    <Grid ColumnDefinitions="*,*,*" Padding="16,20" ColumnSpacing="0" BackgroundColor="#22201D">
+                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                            <Label x:Name="LiveTimeLabel" Text="00:00"
+                                   FontSize="24" FontAttributes="Bold" TextColor="White"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Time" FontSize="11" FontAttributes="Bold" TextColor="#A19D94" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="Center">
+                            <Label x:Name="LiveDistanceLabel" Text="0"
+                                   FontSize="32" FontAttributes="Bold" TextColor="White"
+                                   HorizontalOptions="Center" Margin="0,-4,0,-4" />
+                            <Label Text="Distance (km)" FontSize="11" FontAttributes="Bold" TextColor="#A19D94" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        
+                        <VerticalStackLayout Grid.Column="2" Spacing="4" HorizontalOptions="Center">
+                            <Label x:Name="LivePaceLabel" Text="--"
+                                   FontSize="24" FontAttributes="Bold" TextColor="White"
+                                   HorizontalOptions="Center" />
+                            <Label x:Name="LiveMetricTitleLabel" Text="Pace (/km)" FontSize="11" FontAttributes="Bold" TextColor="#A19D94" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Bottom CTA Bar -->
+            <Border x:Name="BottomBar" BackgroundColor="#111111" StrokeThickness="0" Margin="0,-16,0,0" Padding="0,16,0,32">
+                <Border.StrokeShape><RoundRectangle CornerRadius="28,28,0,0" /></Border.StrokeShape>
+                
+                <VerticalStackLayout Spacing="0">
+                    <!-- 3-column CTA row -->
+                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="0" Padding="28,0,28,0">
+
+                        <!-- Left: Sport selector circle -->
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="8" InputTransparent="False" Margin="0,0,0,0">
+                            <Grid WidthRequest="64" HeightRequest="64" HorizontalOptions="Center">
+                                <Border WidthRequest="64" HeightRequest="64" BackgroundColor="#3A1C0E" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="32" /></Border.StrokeShape>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnSportPillTapped" />
+                                    </Border.GestureRecognizers>
+                                    <Label x:Name="SelectedSportIconLabel"
+                                           Text="{x:Static icons:MaterialSymbols.Directions_walk}"
+                                           FontFamily="MaterialSymbols"
+                                           FontSize="26"
+                                           HorizontalOptions="Center" VerticalOptions="Center" TextColor="#FC5200" />
+                                </Border>
+                                <!-- Orange Checkmark badge -->
+                                <Border WidthRequest="20" HeightRequest="20" BackgroundColor="#FC5200" Stroke="#111111" StrokeThickness="2"
+                                        HorizontalOptions="End" VerticalOptions="Start" Margin="0,2,2,0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="12" TextColor="White"
+                                                        HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+                            <Label x:Name="SelectedSportNameLabel" Text="Walk"
+                                   FontSize="13" FontAttributes="Bold" TextColor="White"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+
+                        <!-- Center: Record button -->
+                        <Grid Grid.Column="1" WidthRequest="90" HeightRequest="90" HorizontalOptions="Center">
+                            <Border x:Name="RecordButtonGlow" WidthRequest="90" HeightRequest="90" StrokeThickness="0" Opacity="0" InputTransparent="True" BackgroundColor="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="45" />
+                                </Border.StrokeShape>
+                                <Border.Background>
+                                    <RadialGradientBrush>
+                                        <GradientStop Color="#99FC4C02" Offset="0.3"/>
+                                        <GradientStop Color="#00FC4C02" Offset="1.0"/>
+                                    </RadialGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <Border x:Name="RecordButton" WidthRequest="72" HeightRequest="72"
+                                    HorizontalOptions="Center" VerticalOptions="Center"
+                                    BackgroundColor="#FF5500" StrokeThickness="0">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="36" /></Border.StrokeShape>
+                                <Border.Shadow><Shadow Brush="#FF5500" Radius="12" Opacity="0.3" Offset="0,4" /></Border.Shadow>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecordTapped" />
+                                </Border.GestureRecognizers>
+                                <controls:IconLabel x:Name="RecordButtonIconLabel"
+                                                    Text="{x:Static icons:MaterialSymbols.Play_arrow}"
+                                                    FontSize="32" TextColor="White"
+                                                    HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Right: Add Route / Pause circle -->
+                        <Grid Grid.Column="2" HorizontalOptions="Center" VerticalOptions="Center">
+                            <!-- Add Route (idle) -->
+                            <VerticalStackLayout x:Name="AddRouteBtn" Spacing="8">
+                                <Border WidthRequest="64" HeightRequest="64" HorizontalOptions="Center"
+                                        BackgroundColor="#2A2A2A" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="32" /></Border.StrokeShape>
+                                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Route}"
+                                                        FontSize="26" TextColor="White"
+                                                        HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Add Route" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+
+                            <!-- Pause (recording) -->
+                            <VerticalStackLayout x:Name="PauseBtn" Spacing="8" IsVisible="False">
+                                <Grid WidthRequest="64" HeightRequest="64" HorizontalOptions="Center">
+                                    <!-- Glow effect -->
+                                    <Border WidthRequest="72" HeightRequest="72" 
+                                            StrokeThickness="0" 
+                                            Opacity="0.6" 
+                                            InputTransparent="True"
+                                            HorizontalOptions="Center"
+                                            VerticalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="36" />
+                                        </Border.StrokeShape>
+                                        <Border.Background>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#88F59E0B" Offset="0.3"/>
+                                                <GradientStop Color="#00F59E0B" Offset="1.0"/>
+                                            </RadialGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    
+                                    <!-- Main button -->
+                                    <Border WidthRequest="64" HeightRequest="64" 
+                                            StrokeThickness="0"
+                                            HorizontalOptions="Center"
+                                            VerticalOptions="Center">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="32" /></Border.StrokeShape>
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FBBF24" Offset="0.0"/>
+                                                <GradientStop Color="#F59E0B" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Shadow>
+                                            <Shadow Brush="#F59E0B" Radius="16" Opacity="0.4" Offset="0,4" />
+                                        </Border.Shadow>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnPauseTapped" />
+                                        </Border.GestureRecognizers>
+                                        <controls:IconLabel x:Name="PauseBtnIcon" 
+                                                            Text="{x:Static icons:MaterialSymbols.Pause}"
+                                                            FontSize="28" 
+                                                            TextColor="White"
+                                                            HorizontalOptions="Center" 
+                                                            VerticalOptions="Center">
+                                            <controls:IconLabel.Shadow>
+                                                <Shadow Brush="Black" Radius="4" Opacity="0.3" Offset="0,2" />
+                                            </controls:IconLabel.Shadow>
+                                        </controls:IconLabel>
+                                    </Border>
+                                </Grid>
+                                <Label x:Name="PauseBtnLabel" 
+                                       Text="Pause" 
+                                       FontSize="13" 
+                                       FontAttributes="Bold" 
+                                       TextColor="#FBBF24" 
+                                       HorizontalOptions="Center">
+                                    <Label.Shadow>
+                                        <Shadow Brush="Black" Radius="2" Opacity="0.2" Offset="0,1" />
+                                    </Label.Shadow>
+                                </Label>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- BACKDROPS AND SHEETS (Using Grid rows for easy overlays) -->
+
+        <Grid x:Name="MapStyleLayer"
+              ZIndex="10"
+              IsVisible="False"
+              InputTransparent="True"
+              CascadeInputTransparent="False">
+            <Grid x:Name="MapStyleBackdrop"
+                  ZIndex="0"
+                  IsVisible="True"
+                  Opacity="0"
+                  BackgroundColor="#70000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMapStyleBackdropTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <Border x:Name="MapStyleSheet"
+                    ZIndex="1"
+                    IsVisible="True"
+                    VerticalOptions="End"
+                    HorizontalOptions="Fill"
+                    HeightRequest="260"
+                    BackgroundColor="#F2121212"
+                    Stroke="#1AFFFFFF"
+                    StrokeThickness="1"
+                    TranslationY="400">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="24,24,0,0" />
+                <RoundRectangle CornerRadius="20,20,0,0" />
             </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#000000" Radius="24" Opacity="0.6" Offset="0,-4" />
+            </Border.Shadow>
+
+            <Grid RowDefinitions="Auto,Auto,*">
+                
+                <!-- Pull Handle -->
+                <BoxView Grid.Row="0" WidthRequest="36" HeightRequest="4" CornerRadius="2"
+                         BackgroundColor="#4DFFFFFF" HorizontalOptions="Center" Margin="0,10,0,0" />
+
+                <!-- Header Content -->
+                <Label Grid.Row="1" Text="MAP STYLE" FontSize="12" FontAttributes="Bold" TextColor="#FFFFFF" Opacity="0.7" CharacterSpacing="1.2" Margin="20,16,20,8"/>
+
+                <!-- Scrollable Horizontal Style Cards -->
+                <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,0,0,20">
+                    <HorizontalStackLayout Spacing="12" Padding="20,8,20,8">
+
+                        <!-- Standard (Streets) -->
+                        <AbsoluteLayout WidthRequest="90" HeightRequest="110">
+                            <!-- Base Card -->
+                            <Border x:Name="RecStreetsCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,90,110"
+                                    BackgroundColor="#242424" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecStreetsTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="*,26">
+                                    <Image Source="map_style_streets.jpg" Aspect="AspectFill" Grid.Row="0" Margin="0,0,0,1"/>
+                                    <Label x:Name="RecStreetsCheck" Text="Standard" Grid.Row="1"
+                                           FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                            <!-- Checkmark Badge -->
+                            <Border x:Name="RecStreetsBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="70,-4,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Outdoors -->
+                        <AbsoluteLayout WidthRequest="90" HeightRequest="110">
+                            <Border x:Name="RecOutdoorsCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,90,110"
+                                    BackgroundColor="#242424" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecOutdoorsTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="*,26">
+                                    <Image Source="map_style_outdoors.jpg" Aspect="AspectFill" Grid.Row="0" Margin="0,0,0,1"/>
+                                    <Label x:Name="RecOutdoorsCheck" Text="Outdoors" Grid.Row="1"
+                                           FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="RecOutdoorsBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="70,-4,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Satellite -->
+                        <AbsoluteLayout WidthRequest="90" HeightRequest="110">
+                            <Border x:Name="RecSatelliteCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,90,110"
+                                    BackgroundColor="#242424" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecSatelliteTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="*,26">
+                                    <Image Source="map_style_satellite.jpg" Aspect="AspectFill" Grid.Row="0" Margin="0,0,0,1"/>
+                                    <Label x:Name="RecSatelliteCheck" Text="Satellite" Grid.Row="1"
+                                           FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="RecSatelliteBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="70,-4,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Dark -->
+                        <AbsoluteLayout WidthRequest="90" HeightRequest="110">
+                            <Border x:Name="RecDarkCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,90,110"
+                                    BackgroundColor="#242424" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecDarkTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="*,26">
+                                    <Image Source="map_style_dark.jpg" Aspect="AspectFill" Grid.Row="0" Margin="0,0,0,1"/>
+                                    <Label x:Name="RecDarkCheck" Text="Dark" Grid.Row="1"
+                                           FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="RecDarkBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="70,-4,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Light -->
+                        <AbsoluteLayout WidthRequest="90" HeightRequest="110">
+                            <Border x:Name="RecLightCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,90,110"
+                                    BackgroundColor="#242424" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRecLightTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="*,26">
+                                    <Image Source="map_style_light.jpg" Aspect="AspectFill" Grid.Row="0" Margin="0,0,0,1"/>
+                                    <Label x:Name="RecLightCheck" Text="Light" Grid.Row="1"
+                                           FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="RecLightBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="70,-4,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check}" FontSize="11" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </AbsoluteLayout>
+
+                    </HorizontalStackLayout>
+                </ScrollView>
+            </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Expanded Sport Sheet -->
+        <Border x:Name="ExpandedSheet" ZIndex="11" BackgroundColor="#1C1C2E" VerticalOptions="End" HeightRequest="580"
+                StrokeThickness="0" IsVisible="False" TranslationY="600">
+            <Border.StrokeShape><RoundRectangle CornerRadius="28,28,0,0" /></Border.StrokeShape>
             <Border.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnExpandedSheetPanUpdated" />
             </Border.GestureRecognizers>
-
-            <Grid RowDefinitions="Auto, Auto, *" Padding="20,12,20,20">
-
-                <!-- Drag handle -->
-                <BoxView Grid.Row="0" HeightRequest="4" WidthRequest="36" CornerRadius="2"
-                         Color="#3A3A5C" HorizontalOptions="Center" Margin="0,0,0,16">
-                    <BoxView.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnCollapseTapped" />
-                    </BoxView.GestureRecognizers>
+            <Grid RowDefinitions="Auto,Auto,*" Padding="20,12,20,0">
+                <BoxView Grid.Row="0" HeightRequest="4" WidthRequest="36" CornerRadius="2" Color="#3A3A5C" HorizontalOptions="Center" Margin="0,0,0,14">
+                    <BoxView.GestureRecognizers><TapGestureRecognizer Tapped="OnCollapseTapped" /></BoxView.GestureRecognizers>
                 </BoxView>
-
-                <!-- Search box -->
-                <Border Grid.Row="1" BackgroundColor="#2A2A3E" StrokeThickness="0"
-                        HeightRequest="46" Margin="0,0,0,12">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="12" />
-                    </Border.StrokeShape>
-                    <Grid ColumnDefinitions="Auto, *" Padding="14,0">
-                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Search}"
-                                            TextColor="#64748B" FontSize="20" VerticalOptions="Center" />
-                        <Entry x:Name="SearchEntry" Grid.Column="1"
-                               Placeholder="Search activities..."
-                               PlaceholderColor="#64748B"
-                               TextColor="White"
-                               BackgroundColor="Transparent"
-                               TextChanged="OnSearchTextChanged" />
+                <Border Grid.Row="1" BackgroundColor="#2A2A3E" StrokeThickness="0" HeightRequest="44" Margin="0,0,0,12">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto,*" Padding="12,0">
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Search}" TextColor="#64748B" FontSize="20" VerticalOptions="Center" />
+                        <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Search activities..." PlaceholderColor="#64748B" TextColor="White" BackgroundColor="Transparent" TextChanged="OnSearchTextChanged" />
                     </Grid>
                 </Border>
-
-                <!-- Grouped sports list -->
-                <CollectionView Grid.Row="2"
-                                ItemsSource="{Binding FilteredSportGroups}"
-                                IsGrouped="True"
-                                SelectionMode="Single"
-                                SelectionChanged="OnSportItemSelected">
+                <CollectionView Grid.Row="2" ItemsSource="{Binding FilteredSportGroups}" IsGrouped="True" SelectionMode="Single" SelectionChanged="OnSportItemSelected">
                     <CollectionView.GroupHeaderTemplate>
                         <DataTemplate>
-                            <Label Text="{Binding Category}"
-                                   FontSize="10" FontAttributes="Bold"
-                                   TextColor="#64748B"
-                                   CharacterSpacing="1.5"
-                                   Margin="0,12,0,6" />
+                            <Label Text="{Binding Category}" FontSize="10" FontAttributes="Bold" TextColor="#64748B" CharacterSpacing="1.5" Margin="0,10,0,4" />
                         </DataTemplate>
                     </CollectionView.GroupHeaderTemplate>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border StrokeThickness="0" HeightRequest="56" Margin="0,0,0,6">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="12" />
-                                </Border.StrokeShape>
+                            <Border StrokeThickness="0" HeightRequest="52" Margin="0,0,0,4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                                 <Border.Triggers>
                                     <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
                                         <Setter Property="BackgroundColor" Value="#2AFC4C02" />
@@ -354,20 +473,74 @@
                                         <Setter Property="StrokeThickness" Value="0" />
                                     </DataTrigger>
                                 </Border.Triggers>
-                                <Grid ColumnDefinitions="Auto, *" Padding="14,0">
-                                    <Label Text="{Binding Icon}" FontSize="22" VerticalOptions="Center" />
-                                    <Label Grid.Column="1" Text="{Binding Name}"
-                                           FontSize="15" FontAttributes="Bold"
-                                           TextColor="White" VerticalOptions="Center"
-                                           Margin="12,0,0,0" />
+                                <Grid ColumnDefinitions="Auto,*" Padding="14,0">
+                                    <Label Text="{Binding Icon}" FontFamily="MaterialSymbols" FontSize="20" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding Name}" FontSize="14" FontAttributes="Bold" TextColor="White" VerticalOptions="Center" Margin="12,0,0,0" />
                                 </Grid>
                             </Border>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
-
             </Grid>
         </Border>
 
-    </AbsoluteLayout>
+        <!-- Finish Confirm Sheet -->
+        <Grid x:Name="FinishBackdrop" IsVisible="False" InputTransparent="False" ZIndex="12" BackgroundColor="#88000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnFinishBackdropTapped" />
+            </Grid.GestureRecognizers>
+        </Grid>
+        <Border x:Name="FinishConfirmSheet" ZIndex="13" BackgroundColor="#1E293B" VerticalOptions="End" HeightRequest="310"
+                StrokeThickness="0" IsVisible="False" TranslationY="350" Padding="24">
+            <Border.StrokeShape><RoundRectangle CornerRadius="28,28,0,0" /></Border.StrokeShape>
+            <VerticalStackLayout Spacing="0">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+                    <Label Text="Finish Workout?" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                    <Border Grid.Column="1" WidthRequest="36" HeightRequest="36" BackgroundColor="#334155" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnKeepRecordingClicked" /></Border.GestureRecognizers>
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Close}" FontSize="14" TextColor="#94A3B8" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,0,0,24">
+                    <Border Padding="16" BackgroundColor="#0F172A" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Time" FontSize="12" TextColor="#64748B" />
+                            <Label x:Name="FinishTimeLabel" Text="00:00:00" FontSize="16" FontAttributes="Bold" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Padding="16" BackgroundColor="#0F172A" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16"/></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Distance" FontSize="12" TextColor="#64748B" />
+                            <HorizontalStackLayout Spacing="4" VerticalOptions="End">
+                                <Label x:Name="FinishDistanceLabel" Text="0.00" FontSize="16" FontAttributes="Bold" TextColor="#10B981" />
+                                <Label Text="km" FontSize="12" TextColor="#10B981" VerticalOptions="End" Margin="0,0,0,2" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+                <Button Text="Save Activity" BackgroundColor="#10B981" TextColor="White" FontSize="16" FontAttributes="Bold" HeightRequest="54" CornerRadius="16" Clicked="OnSaveActivityClicked" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Saved Success Overlay -->
+        <Grid x:Name="SavedBackdrop" IsVisible="False" InputTransparent="False" ZIndex="14" BackgroundColor="#88000000" />
+        <Border x:Name="SavedSheet" ZIndex="15" BackgroundColor="#10B981" VerticalOptions="Center" HeightRequest="200" WidthRequest="260" HorizontalOptions="Center"
+                StrokeThickness="0" IsVisible="False" TranslationY="600">
+            <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+            <VerticalStackLayout Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
+                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Check_circle}" FontSize="56" TextColor="White" HorizontalOptions="Center" />
+                <Label x:Name="SavedSportLabel" Text="Workout" FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                    <Label x:Name="SavedTimeLabel" Text="00:00:00" FontSize="14" TextColor="White" />
+                    <Label Text="|" FontSize="14" TextColor="#D1FAE5" />
+                    <Label x:Name="SavedDistanceLabel" Text="0.00 km" FontSize="14" TextColor="White" />
+                </HorizontalStackLayout>
+                <Button Text="Done" BackgroundColor="#059669" TextColor="White" CornerRadius="12" HeightRequest="40" Margin="0,8,0,0" Clicked="OnDoneClicked" />
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
 </ContentPage>

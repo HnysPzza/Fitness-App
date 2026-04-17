@@ -3,21 +3,44 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.PrivacyPolicyPage"
              Title="Privacy Policy"
-             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+             BackgroundColor="#0B0F19">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20,20,20,40" Spacing="16">
+        <VerticalStackLayout Padding="16,18,16,40" Spacing="16">
+
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Privacy Policy"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="#F8FAFC" />
+                    <Label Text="Understand what information is collected, how it is used, and the controls available to you."
+                           FontSize="13"
+                           TextColor="#94A3B8" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
 
             <Label Text="Last updated: January 1, 2025"
                    FontSize="13"
-                   TextColor="#9E9E9E" />
+                   TextColor="#94A3B8" />
 
             <Label Text="Privacy Policy"
                    FontSize="22"
                    FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+                   TextColor="#F8FAFC" />
 
-            <Label TextColor="{AppThemeBinding Light=#333333, Dark=#CCCCCC}" FontSize="15" LineBreakMode="WordWrap">
+            <Label TextColor="#CBD5E1" FontSize="15" LineBreakMode="WordWrap">
                 <Label.FormattedText>
                     <FormattedString>
                         <Span Text="1. Information We Collect&#10;&#10;" FontAttributes="Bold" />
@@ -39,8 +62,8 @@
                     </FormattedString>
                 </Label.FormattedText>
             </Label>
-
-            <BoxView HeightRequest="0.5" Color="#E0E0E0" Margin="0,8,0,8" />
+                </VerticalStackLayout>
+            </Border>
 
             <Button Text="Open in Browser"
                     Clicked="OnOpenInBrowser"
@@ -48,9 +71,9 @@
                     TextColor="#FC5200"
                     BorderColor="#FC5200"
                     BorderWidth="1.5"
-                    CornerRadius="10"
+                    CornerRadius="16"
                     FontSize="15"
-                    HeightRequest="44" />
+                    HeightRequest="48" />
 
         </VerticalStackLayout>
     </ScrollView>

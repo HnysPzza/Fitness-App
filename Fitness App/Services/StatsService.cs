@@ -1,4 +1,5 @@
 using Fitness_App.Models;
+using Postgrest = Supabase.Postgrest;
 
 namespace Fitness_App.Services;
 
@@ -13,6 +14,35 @@ public class StatsService
     public StatsService(ISupabaseService supabase)
     {
         _supabase = supabase;
+    }
+
+    public string? LastSaveError { get; private set; }
+
+    public async Task<UserStats> GetStatsInRangeAsync(DateTime fromUtc, DateTime? toUtc = null)
+    {
+        try
+        {
+            if (_supabase.Client == null || _supabase.CurrentUser == null)
+                return new UserStats();
+
+            var query = _supabase.Client
+                .From<UserActivity>()
+                .Filter("user_id", Postgrest.Constants.Operator.Equals, _supabase.CurrentUser.Id)
+                .Filter("created_at", Postgrest.Constants.Operator.GreaterThanOrEqual, fromUtc.ToUniversalTime().ToString("O"));
+
+            if (toUtc.HasValue)
+            {
+                query = query.Filter("created_at", Postgrest.Constants.Operator.LessThan, toUtc.Value.ToUniversalTime().ToString("O"));
+            }
+
+            var result = await query.Get();
+            return BuildStats(result.Models);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] GetStatsInRange: {ex.Message}");
+            return new UserStats();
+        }
     }
 
     // ── All-time stats ────────────────────────────────────────────────────
@@ -38,33 +68,160 @@ public class StatsService
         }
     }
 
+    // ── Today stats ───────────────────────────────────────────────────────
+
+    public async Task<UserStats> GetTodayStatsAsync()
+    {
+        try
+        {
+            return await GetStatsInRangeAsync(DateTime.UtcNow.Date);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] GetTodayStats: {ex.Message}");
+            return new UserStats();
+        }
+    }
+
     // ── This-week stats ───────────────────────────────────────────────────
 
     public async Task<UserStats> GetThisWeekStatsAsync()
     {
         try
         {
-            if (_supabase.Client == null || _supabase.CurrentUser == null)
-                return new UserStats();
-
-            // ISO-8601 monday of current week
             var today  = DateTime.UtcNow.Date;
             int offset = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
             if (offset < 0) offset += 7;
-            var monday = today.AddDays(-offset).ToString("O");
+            var monday = today.AddDays(-offset);
 
-            var result = await _supabase.Client
-                .From<UserActivity>()
-                .Filter("user_id", Postgrest.Constants.Operator.Equals, _supabase.CurrentUser.Id)
-                .Filter("created_at", Postgrest.Constants.Operator.GreaterThanOrEqual, monday)
-                .Get();
-
-            return BuildStats(result.Models);
+            return await GetStatsInRangeAsync(monday);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[StatsService] GetThisWeekStats: {ex.Message}");
             return new UserStats();
+        }
+    }
+
+    // ── Month-over-month KM comparison ────────────────────────────────────
+
+    /// <summary>
+    /// Returns (currentMonthKm, lastMonthKm, percentChange).
+    /// percentChange is positive when this month is higher than last month.
+    /// Returns (0, 0, 0) when there is no data.
+    /// </summary>
+    public async Task<(double CurrentMonthKm, double LastMonthKm, double PercentChange)> GetMonthlyKmComparisonAsync()
+    {
+        try
+        {
+            var now           = DateTime.UtcNow;
+            var thisMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var lastMonthStart = thisMonthStart.AddMonths(-1);
+
+            var thisMonthTask = GetStatsInRangeAsync(thisMonthStart, thisMonthStart.AddMonths(1));
+            var lastMonthTask = GetStatsInRangeAsync(lastMonthStart, thisMonthStart);
+
+            await Task.WhenAll(thisMonthTask, lastMonthTask);
+
+            var thisKm = (await thisMonthTask).TotalKm;
+            var lastKm = (await lastMonthTask).TotalKm;
+
+            double pct = 0;
+            if (lastKm > 0)
+                pct = ((thisKm - lastKm) / lastKm) * 100.0;
+            else if (thisKm > 0)
+                pct = 100.0; // anything vs nothing = +100%
+
+            return (thisKm, lastKm, pct);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] GetMonthlyKmComparison: {ex.Message}");
+            return (0, 0, 0);
+        }
+    }
+
+
+    public async Task<int> GetCurrentStreakAsync()
+    {
+        try
+        {
+            if (_supabase.Client == null || _supabase.CurrentUser == null)
+                return 0;
+
+            var from = DateTime.UtcNow.Date.AddDays(-60).ToString("O");
+            var result = await _supabase.Client
+                .From<UserActivity>()
+                .Filter("user_id", Postgrest.Constants.Operator.Equals, _supabase.CurrentUser.Id)
+                .Filter("created_at", Postgrest.Constants.Operator.GreaterThanOrEqual, from)
+                .Order("created_at", Postgrest.Constants.Ordering.Descending)
+                .Get();
+
+            var activeDates = result.Models
+                .Select(activity => activity.CreatedAt.ToLocalTime().Date)
+                .Distinct()
+                .OrderByDescending(date => date)
+                .ToList();
+
+            if (activeDates.Count == 0)
+                return 0;
+
+            var today = DateTime.Now.Date;
+            var expected = activeDates[0] == today
+                ? today
+                : activeDates[0] == today.AddDays(-1)
+                    ? today.AddDays(-1)
+                    : DateTime.MinValue;
+
+            if (expected == DateTime.MinValue)
+                return 0;
+
+            var streak = 0;
+            foreach (var date in activeDates)
+            {
+                if (date != expected)
+                    break;
+
+                streak++;
+                expected = expected.AddDays(-1);
+            }
+
+            return streak;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] GetCurrentStreak: {ex.Message}");
+            return 0;
+        }
+    }
+
+    public async Task<List<string>> GetTopSportsAsync(int limit = 4)
+    {
+        try
+        {
+            if (_supabase.Client == null || _supabase.CurrentUser == null)
+                return new List<string>();
+
+            var result = await _supabase.Client
+                .From<UserActivity>()
+                .Filter("user_id", Postgrest.Constants.Operator.Equals, _supabase.CurrentUser.Id)
+                .Order("created_at", Postgrest.Constants.Ordering.Descending)
+                .Limit(50)
+                .Get();
+
+            return result.Models
+                .Where(activity => !string.IsNullOrWhiteSpace(activity.Sport))
+                .GroupBy(activity => activity.Sport)
+                .OrderByDescending(group => group.Count())
+                .ThenByDescending(group => group.Max(activity => activity.CreatedAt))
+                .Take(limit)
+                .Select(group => group.Key)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] GetTopSports: {ex.Message}");
+            return new List<string>();
         }
     }
 
@@ -142,6 +299,44 @@ public class StatsService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[StatsService] GetActivityById: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<UserActivity?> SaveActivityAsync(UserActivity activity)
+    {
+        try
+        {
+            LastSaveError = null;
+            await _supabase.InitializeAsync();
+
+            if (_supabase.Client == null || _supabase.CurrentUser == null)
+            {
+                LastSaveError = "You need to be signed in before saving an activity.";
+                return null;
+            }
+
+            activity.UserId = _supabase.CurrentUser.Id;
+
+            if (string.IsNullOrWhiteSpace(activity.Id))
+                activity.Id = Guid.NewGuid().ToString();
+
+            if (activity.CreatedAt == default)
+                activity.CreatedAt = DateTime.UtcNow;
+
+            await _supabase.Client
+                .From<UserActivity>()
+                .Insert(activity);
+
+            return activity;
+        }
+        catch (Exception ex)
+        {
+            // Surface the deepest exception message so PostgREST schema errors are visible
+            // in both the debug output AND the alert shown to the user.
+            var inner   = ex.InnerException?.Message ?? string.Empty;
+            LastSaveError = string.IsNullOrWhiteSpace(inner) ? ex.Message : $"{ex.Message} → {inner}";
+            System.Diagnostics.Debug.WriteLine($"[StatsService] SaveActivity: {ex}");
             return null;
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace Fitness_App
+namespace Fitness_App
 {
     public partial class AppShell : Shell
     {
@@ -6,13 +6,12 @@
         {
             InitializeComponent();
 
-            // Existing routes
             Routing.RegisterRoute("settings", typeof(Pages.SettingsPage));
             Routing.RegisterRoute("generalsettings", typeof(Pages.GeneralSettingsPage));
             Routing.RegisterRoute("editprofile", typeof(Pages.EditProfilePage));
-            Routing.RegisterRoute("activerecording", typeof(Pages.ActiveRecordingPage));
 
-            // General Settings sub-pages
+            Routing.RegisterRoute("activitydetail", typeof(Pages.ActivityDetailPage));
+
             Routing.RegisterRoute("workoutreminders", typeof(Pages.WorkoutRemindersPage));
             Routing.RegisterRoute("themeselection", typeof(Pages.ThemeSelectionPage));
             Routing.RegisterRoute("accentcolor", typeof(Pages.AccentColorSelectionPage));

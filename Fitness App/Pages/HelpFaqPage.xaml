@@ -3,30 +3,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.HelpFaqPage"
              Title="Help &amp; FAQ"
-             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+             BackgroundColor="#0B0F19">
 
-    <VerticalStackLayout Spacing="0">
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="16,18,16,40">
 
-        <!-- Search Bar -->
-        <Border StrokeThickness="0" Margin="16,12,16,4" Padding="12,8">
-            <Border.StrokeShape><RoundRectangle CornerRadius="10"/></Border.StrokeShape>
-            <Border.BackgroundColor>
-                <AppThemeBinding Light="#EBEBEB" Dark="#2C2C2E"/>
-            </Border.BackgroundColor>
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center" />
-                <Entry Grid.Column="1"
-                       Placeholder="Search help articles..."
-                       PlaceholderColor="#9E9E9E"
-                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
-                       BackgroundColor="Transparent"
-                       TextChanged="OnSearchChanged" />
-            </Grid>
-        </Border>
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Help &amp; FAQ"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="#F8FAFC" />
+                    <Label Text="Search common questions about recording, maps, notifications, accounts, and connected devices."
+                           FontSize="13"
+                           TextColor="#94A3B8" />
+                </VerticalStackLayout>
+            </Border>
 
-        <ScrollView>
-            <VerticalStackLayout x:Name="FaqContainer" Padding="0,8,0,40" />
-        </ScrollView>
+            <Border Stroke="#243041" StrokeThickness="1" Padding="14,10" BackgroundColor="#111827">
+                <Border.StrokeShape><RoundRectangle CornerRadius="18"/></Border.StrokeShape>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center" />
+                    <Entry Grid.Column="1"
+                           Placeholder="Search help articles..."
+                           PlaceholderColor="#64748B"
+                           TextColor="#F8FAFC"
+                           BackgroundColor="Transparent"
+                           TextChanged="OnSearchChanged" />
+                </Grid>
+            </Border>
 
-    </VerticalStackLayout>
+            <VerticalStackLayout x:Name="FaqContainer" Padding="0,0,0,8" Spacing="12" />
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

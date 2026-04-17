@@ -1,4 +1,5 @@
 using Fitness_App.Services;
+using Microsoft.Extensions.DependencyInjection;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 
@@ -8,7 +9,11 @@ namespace Fitness_App.Pages
     {
         // ─── State ───────────────────────────────────────────────────────────
         private IProfileService? _profileService;
-        private string _selectedPeriod = "Today";
+        private StatsService? _statsService;
+        private IActivitySaveNotifier? _activitySaveNotifier;
+        private readonly List<UserActivity> _recentActivities = new();
+        private bool _isRefreshing;
+        private string _selectedPeriod = "Week";
 
         // Chart data: list of (label, value) pairs kept simple
         private readonly List<(string Label, float Value)> _chartData = new();
@@ -18,56 +23,83 @@ namespace Fitness_App.Pages
         public YouPage()
         {
             InitializeComponent();
-            // Defer heavy work until the page actually appears
         }
 
         // ─── Lifecycle ──────────────────────────────────────────────────────
         protected override void OnHandlerChanged()
         {
             base.OnHandlerChanged();
-            _profileService ??= Handler?.MauiContext?.Services.GetService<IProfileService>();
-
-            if (_profileService != null)
-            {
-                _profileService.ProfileChanged -= OnProfileChanged;
-                _profileService.ProfileChanged += OnProfileChanged;
-            }
+            ResolveServices();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
 
-            _profileService ??= Handler?.MauiContext?.Services.GetService<IProfileService>();
+            ResolveServices();
+            LoadProfileData();
+            ShowSkeletonValues();
+            // Fire-and-forget: never block the navigation thread with network I/O.
+            // A blocking await here causes a silent crash in Release/native builds.
+            _ = Task.Run(async () => await RefreshAsync());
+        }
 
-            if (_profileService != null)
+        private void ShowSkeletonValues()
+        {
+            try
             {
-                _profileService.ProfileChanged -= OnProfileChanged;
-                _profileService.ProfileChanged += OnProfileChanged;
-                LoadProfileData();
+                StatKmLabel.Text         = "—";
+                StatActivitiesLabel.Text = "—";
+                StatTimeLabel.Text       = "—";
+                StatSpeedLabel.Text      = "—";
+                KmTrendLabel.Text        = "Loading…";
+                KmTrendIcon.IsVisible    = false;
             }
-
-            // Load stats + chart off the main thread
-            _ = Task.Run(() =>
-            {
-                var stats = GenerateStats();
-                var data  = BuildChartData(_selectedPeriod);
-
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    ApplyStats(stats);
-                    _chartData.Clear();
-                    _chartData.AddRange(data);
-                    ChartCanvas.InvalidateSurface();
-                });
-            });
+            catch { /* not yet attached to visual tree */ }
         }
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
+
             if (_profileService != null)
                 _profileService.ProfileChanged -= OnProfileChanged;
+
+            if (_activitySaveNotifier != null)
+                _activitySaveNotifier.ActivitySaved -= OnActivitySaved;
+        }
+
+        private void ResolveServices()
+        {
+            var services = Handler?.MauiContext?.Services ?? Application.Current?.Handler?.MauiContext?.Services;
+            if (services == null)
+                return;
+
+            var profileService = services.GetService<IProfileService>();
+            if (!ReferenceEquals(_profileService, profileService) && _profileService != null)
+                _profileService.ProfileChanged -= OnProfileChanged;
+
+            _profileService = profileService;
+
+            if (_profileService != null)
+            {
+                _profileService.ProfileChanged -= OnProfileChanged;
+                _profileService.ProfileChanged += OnProfileChanged;
+            }
+
+            _statsService ??= services.GetService<StatsService>();
+
+            var activitySaveNotifier = services.GetService<IActivitySaveNotifier>();
+            if (!ReferenceEquals(_activitySaveNotifier, activitySaveNotifier) && _activitySaveNotifier != null)
+                _activitySaveNotifier.ActivitySaved -= OnActivitySaved;
+
+            _activitySaveNotifier = activitySaveNotifier;
+
+            if (_activitySaveNotifier != null)
+            {
+                _activitySaveNotifier.ActivitySaved -= OnActivitySaved;
+                _activitySaveNotifier.ActivitySaved += OnActivitySaved;
+            }
         }
 
         // ─── Profile ────────────────────────────────────────────────────────
@@ -78,7 +110,7 @@ namespace Fitness_App.Pages
         {
             if (_profileService == null) return;
 
-            UserNameLabel.Text = $"{_profileService.UserName} 🔥";
+            UserNameLabel.Text = _profileService.UserName ?? "Athlete";
 
             if (!string.IsNullOrEmpty(_profileService.ProfilePhotoPath)
                 && File.Exists(_profileService.ProfilePhotoPath))
@@ -96,78 +128,110 @@ namespace Fitness_App.Pages
             }
         }
 
-        // ─── Stats (simulated) ───────────────────────────────────────────────
-        private record StatSnapshot(string Km, string Activities, string Time, string Speed);
+        private void OnActivitySaved(object? sender, EventArgs e)
+            => MainThread.BeginInvokeOnMainThread(async () => await RefreshAsync());
 
-        private static StatSnapshot GenerateStats()
+        // ─── Stats (simulated) ───────────────────────────────────────────────
+        private async Task RefreshAsync()
         {
-            var r = new Random();
-            double km     = Math.Round(r.NextDouble() * 300 + 50, 1);
-            int    acts   = r.Next(10, 80);
-            int    hours  = r.Next(5, 40);
-            int    mins   = r.Next(0, 59);
-            double speed  = Math.Round(r.NextDouble() * 8 + 5, 1);
-            return new StatSnapshot($"{km}", $"{acts}", $"{hours}h {mins}m", $"{speed}");
+            if (_isRefreshing || _statsService == null)
+                return;
+
+            _isRefreshing = true;
+            try
+            {
+                var statsTask        = _statsService.GetAllTimeStatsAsync();
+                var chartTask        = _statsService.GetChartDataAsync(_selectedPeriod);
+                var recentTask       = _statsService.GetRecentActivitiesAsync(3);
+                var trendTask        = _statsService.GetMonthlyKmComparisonAsync();
+
+                await Task.WhenAll(statsTask, chartTask, recentTask, trendTask);
+
+                var stats            = await statsTask;
+                var chartData        = await chartTask;
+                var recentActivities = await recentTask;
+                var trend            = await trendTask;
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    try { ApplyStats(stats, trend); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyStats: {ex.Message}"); }
+
+                    try { ApplyChartData(chartData); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyChartData: {ex.Message}"); }
+
+                    try { ApplyRecentActivities(recentActivities); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyRecentActivities: {ex.Message}"); }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[YouPage] Refresh: {ex.Message}");
+            }
+            finally
+            {
+                _isRefreshing = false;
+            }
         }
 
-        private void ApplyStats(StatSnapshot s)
+        private void ApplyStats(UserStats stats, (double CurrentMonthKm, double LastMonthKm, double PercentChange) trend)
         {
-            StatKmLabel.Text         = s.Km;
-            StatActivitiesLabel.Text = s.Activities;
-            StatTimeLabel.Text       = s.Time;
-            StatSpeedLabel.Text      = s.Speed;
+            StatKmLabel.Text         = stats.TotalKmDisplay;
+            StatActivitiesLabel.Text = stats.ActivitiesDisplay;
+            StatTimeLabel.Text       = stats.TotalTimeDisplay;
+            StatSpeedLabel.Text      = stats.AvgSpeedDisplay;
+
+            // ── Dynamic trend indicator ───────────────────────────────────
+            var pct = trend.PercentChange;
+
+            if (trend.CurrentMonthKm == 0 && trend.LastMonthKm == 0)
+            {
+                // No data at all — hide the trend row
+                KmTrendIcon.IsVisible  = false;
+                KmTrendLabel.IsVisible = false;
+            }
+            else
+            {
+                KmTrendIcon.IsVisible  = true;
+                KmTrendLabel.IsVisible = true;
+
+                var accentOrange = Color.FromArgb("#FC5200");
+                var accentGreen  = Color.FromArgb("#22C55E");
+                var accentRed    = Color.FromArgb("#EF4444");
+
+                if (pct > 0)
+                {
+                    KmTrendIcon.Text      = UI.Icons.MaterialSymbols.Trending_up;
+                    KmTrendIcon.TextColor  = accentGreen;
+                    KmTrendLabel.TextColor = accentGreen;
+                    KmTrendLabel.Text      = $"+{pct:F0}% vs last month";
+                }
+                else if (pct < 0)
+                {
+                    KmTrendIcon.Text      = UI.Icons.MaterialSymbols.Trending_down;
+                    KmTrendIcon.TextColor  = accentRed;
+                    KmTrendLabel.TextColor = accentRed;
+                    KmTrendLabel.Text      = $"{pct:F0}% vs last month";
+                }
+                else
+                {
+                    KmTrendIcon.Text      = UI.Icons.MaterialSymbols.Trending_flat;
+                    KmTrendIcon.TextColor  = accentOrange;
+                    KmTrendLabel.TextColor = accentOrange;
+                    KmTrendLabel.Text      = "No change vs last month";
+                }
+            }
         }
 
         // ─── Chart data builders ─────────────────────────────────────────────
-        private static List<(string, float)> BuildChartData(string period)
+        private void ApplyChartData(List<(string Label, float Value)> data)
         {
-            var r    = new Random();
-            var data = new List<(string, float)>();
-
-            switch (period)
-            {
-                case "Today":
-                {
-                    var start = DateTime.Today;
-                    float cum = 0;
-                    for (int i = 0; i <= 6; i++)
-                    {
-                        cum += (float)(r.Next(20, 80) / 10.0);
-                        data.Add((start.AddHours(i * 3).ToString("HH:mm"), MathF.Round(cum, 1)));
-                    }
-                    break;
-                }
-                case "Week":
-                {
-                    var start = DateTime.Today.AddDays(-6);
-                    float cum = 0;
-                    for (int i = 0; i < 7; i++)
-                    {
-                        cum += (float)(r.Next(10, 60) / 10.0);
-                        data.Add((start.AddDays(i).ToString("ddd"), MathF.Round(cum, 1)));
-                    }
-                    break;
-                }
-                case "Month":
-                {
-                    var start = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-                    int days  = DateTime.DaysInMonth(start.Year, start.Month);
-                    float cum = 0;
-                    // ~6 data points spread through the month
-                    int step = Math.Max(days / 6, 1);
-                    for (int d = 1; d <= days; d += step)
-                    {
-                        cum += r.Next(20, 80);
-                        data.Add((new DateTime(start.Year, start.Month, d).ToString("MMM dd"), cum));
-                    }
-                    break;
-                }
-            }
-            return data;
+            _chartData.Clear();
+            _chartData.AddRange(data);
+            ChartCanvas.InvalidateSurface();
         }
 
         // ─── Tab control ─────────────────────────────────────────────────────
-        private void OnTabToday(object? sender, EventArgs e) => SwitchTab("Today");
         private void OnTabWeek(object? sender, EventArgs e)  => SwitchTab("Week");
         private void OnTabMonth(object? sender, EventArgs e) => SwitchTab("Month");
 
@@ -183,26 +247,16 @@ namespace Fitness_App.Pages
                 _       => Color.FromArgb("#FC5200"),
             };
 
-            // Reset all tabs to transparent / gray
             var normalBg    = Colors.Transparent;
-            var normalFg    = Application.Current?.RequestedTheme == AppTheme.Dark
-                                ? Color.FromArgb("#94A3B8")
-                                : Color.FromArgb("#64748B");
+            var normalFg    = Color.FromArgb("#64748B");
 
-            TabToday.BackgroundColor  = normalBg;
             TabWeek.BackgroundColor   = normalBg;
             TabMonth.BackgroundColor  = normalBg;
-            TabTodayLabel.TextColor   = normalFg;
             TabWeekLabel.TextColor    = normalFg;
             TabMonthLabel.TextColor   = normalFg;
 
-            // Highlight chosen tab
             switch (period)
             {
-                case "Today":
-                    TabToday.BackgroundColor    = _accentColor;
-                    TabTodayLabel.TextColor     = Colors.White;
-                    break;
                 case "Week":
                     TabWeek.BackgroundColor     = _accentColor;
                     TabWeekLabel.TextColor      = Colors.White;
@@ -213,17 +267,66 @@ namespace Fitness_App.Pages
                     break;
             }
 
-            // Rebuild chart data off-thread
-            _ = Task.Run(() =>
+            _ = RefreshChartAsync(period);
+        }
+
+        private async Task RefreshChartAsync(string period)
+        {
+            if (_statsService == null)
+                return;
+
+            try
             {
-                var data = BuildChartData(period);
-                MainThread.BeginInvokeOnMainThread(() =>
+                var data = await _statsService.GetChartDataAsync(period);
+                await MainThread.InvokeOnMainThreadAsync(() => ApplyChartData(data));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[YouPage] Refresh chart: {ex.Message}");
+            }
+        }
+
+        private void ApplyRecentActivities(List<UserActivity> activities)
+        {
+            _recentActivities.Clear();
+            _recentActivities.AddRange(activities);
+
+            var cards = new[] { ActivityCard1, ActivityCard2, ActivityCard3 };
+            var badges = new[] { ActivityBadge1, ActivityBadge2, ActivityBadge3 };
+            var emojis = new[] { ActivityEmoji1, ActivityEmoji2, ActivityEmoji3 };
+            var titles = new[] { ActivityTitle1, ActivityTitle2, ActivityTitle3 };
+            var metas = new[] { ActivityMeta1, ActivityMeta2, ActivityMeta3 };
+
+            RecentActivitiesEmptyLabel.IsVisible = activities.Count == 0;
+
+            for (var i = 0; i < cards.Length; i++)
+            {
+                if (i < activities.Count)
                 {
-                    _chartData.Clear();
-                    _chartData.AddRange(data);
-                    ChartCanvas.InvalidateSurface();
-                });
-            });
+                    var activity = activities[i];
+                    cards[i].IsVisible = true;
+                    cards[i].HeightRequest = -1; // Auto height
+                    cards[i].BindingContext = activity;
+                    badges[i].BackgroundColor = Color.FromArgb("#1E2024");
+                    emojis[i].Text = ActivityPresentation.GetSportIcon(activity.Sport);
+                    titles[i].Text = string.IsNullOrWhiteSpace(activity.Sport) ? "Activity" : activity.Sport;
+
+                    var daysAgo = (DateTime.UtcNow - activity.CreatedAt.ToUniversalTime()).Days;
+                    string timeAgoStr = daysAgo switch
+                    {
+                        0 => "TODAY",
+                        1 => "YESTERDAY",
+                        _ => $"{daysAgo} DAYS AGO"
+                    };
+                    metas[i].Text = $"{activity.DistanceKm:F1} km • {ActivityPresentation.FormatDuration(activity.DurationTicks)} • {timeAgoStr}";
+                }
+                else
+                {
+                    cards[i].IsVisible = false;
+                    cards[i].HeightRequest = 0;
+                    cards[i].BindingContext = null;
+                }
+            }
         }
 
         // ─── SkiaSharp chart renderer ─────────────────────────────────────────
@@ -232,31 +335,21 @@ namespace Fitness_App.Pages
             var canvas = e.Surface.Canvas;
             canvas.Clear();
 
-            if (_chartData.Count < 2) return;
+            if (_chartData.Count == 0) return;
 
             var info = e.Info;
             float w = info.Width;
             float h = info.Height;
 
-            float padL = 12f, padR = 12f, padT = 20f, padB = 28f;
+            float padL = 20f, padR = 20f, padT = 20f, padB = 40f;
             float chartW = w - padL - padR;
             float chartH = h - padT - padB;
 
             float maxVal = _chartData.Max(d => d.Value);
             if (maxVal <= 0) maxVal = 1;
 
-            // Build point positions
-            var pts = new SKPoint[_chartData.Count];
-            for (int i = 0; i < _chartData.Count; i++)
-            {
-                float x = padL + (chartW / (_chartData.Count - 1)) * i;
-                float y = padT + chartH - (_chartData[i].Value / maxVal) * chartH;
-                pts[i]  = new SKPoint(x, y);
-            }
-
-            // Determine accent SKColor
-            var hex     = _accentColor.ToHex().TrimStart('#');
-            // parse r,g,b from hex (format AARRGGBB or RRGGBB)
+            // Determine accent color
+            var hex = _accentColor.ToHex().TrimStart('#');
             SKColor accent;
             if (hex.Length == 8)
                 accent = new SKColor(
@@ -269,86 +362,94 @@ namespace Fitness_App.Pages
                     Convert.ToByte(hex.Substring(2, 2), 16),
                     Convert.ToByte(hex.Substring(4, 2), 16));
 
-            bool isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
-            var  gridColor = isDark
-                    ? new SKColor(255, 255, 255, 20)
-                    : new SKColor(0, 0, 0, 15);
-
-            // 1. Subtle horizontal grid lines
-            using var gridPaint = new SKPaint { Color = gridColor, StrokeWidth = 1, IsAntialias = false };
-            for (int i = 1; i <= 3; i++)
+            var normalBarColor = new SKColor(255, 255, 255, 10); // subtle faint white for normal bars
+            
+            // Fonts and Paints
+            using var textFont = new SKFont(SKTypeface.Default, 24f); 
+            using var labelPaint = new SKPaint
             {
-                float gy = padT + chartH / 4 * i;
-                canvas.DrawLine(padL, gy, padL + chartW, gy, gridPaint);
-            }
-
-            // 2. Area fill (gradient)
-            var path = new SKPath();
-            path.MoveTo(pts[0].X, padT + chartH);
-            foreach (var p in pts) path.LineTo(p);
-            path.LineTo(pts[^1].X, padT + chartH);
-            path.Close();
-
-            using var fillShader = SKShader.CreateLinearGradient(
-                new SKPoint(0, padT),
-                new SKPoint(0, padT + chartH),
-                new[] { accent.WithAlpha(100), accent.WithAlpha(5) },
-                SKShaderTileMode.Clamp);
-            using var fillPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Shader      = fillShader
-            };
-            canvas.DrawPath(path, fillPaint);
-
-            // 3. Line
-            var linePath = new SKPath();
-            linePath.MoveTo(pts[0]);
-            for (int i = 1; i < pts.Length; i++)
-            {
-                // smooth cubic  
-                float cx1 = pts[i - 1].X + (pts[i].X - pts[i - 1].X) / 2;
-                float cx2 = cx1;
-                linePath.CubicTo(cx1, pts[i - 1].Y, cx2, pts[i].Y, pts[i].X, pts[i].Y);
-            }
-
-            using var linePaint = new SKPaint
-            {
-                Color       = accent,
-                StrokeWidth = 2.5f,
-                IsStroke    = true,
-                IsAntialias = true,
-                StrokeCap   = SKStrokeCap.Round,
-                StrokeJoin  = SKStrokeJoin.Round
-            };
-            canvas.DrawPath(linePath, linePaint);
-
-            // 4. Dots
-            using var dotFill = new SKPaint { Color = accent, IsAntialias = true };
-            using var dotRing = new SKPaint { Color = isDark ? new SKColor(30,41,59) : SKColors.White,
-                                              IsAntialias = true };
-            foreach (var p in pts)
-            {
-                canvas.DrawCircle(p, 5f, dotRing);
-                canvas.DrawCircle(p, 3.5f, dotFill);
-            }
-
-            // 5. X labels (using modern SKFont API)
-            using var textFont  = new SKFont(SKTypeface.Default, 22f);
-            using var textPaint = new SKPaint
-            {
-                Color       = isDark ? new SKColor(148, 163, 184) : new SKColor(100, 116, 139),
+                Color = new SKColor(100, 116, 139), // #64748B
                 IsAntialias = true
             };
-            for (int i = 0; i < pts.Length; i++)
+            using var normalBarPaint = new SKPaint
             {
-                // show every other label to avoid crowding
-                if (i % 2 != 0 && pts.Length > 4) continue;
-                canvas.DrawText(_chartData[i].Label, pts[i].X, h - 4, SKTextAlign.Center, textFont, textPaint);
+                Color = normalBarColor,
+                IsAntialias = true
+            };
+
+            float barWidth = Math.Min(32f, chartW / _chartData.Count * 0.6f);
+            int maxIdx = _chartData.FindIndex(d => d.Value == maxVal);
+
+            for (int i = 0; i < _chartData.Count; i++)
+            {
+                float xCenter = padL + (chartW / Math.Max(1, _chartData.Count - 1)) * i;
+                float barH = (_chartData[i].Value / maxVal) * chartH;
+                if (barH < 4) barH = 4; // minimum height
+                
+                float xStart = xCenter - (barWidth / 2f);
+                float yStart = padT + chartH - barH;
+
+                var rect = new SKRect(xStart, yStart, xStart + barWidth, padT + chartH);
+
+                if (i == maxIdx)
+                {
+                    // Gradient for the highlighted bar
+                    using var activeShader = SKShader.CreateLinearGradient(
+                        new SKPoint(0, yStart),
+                        new SKPoint(0, padT + chartH),
+                        new[] { accent, accent.WithAlpha(150) },
+                        SKShaderTileMode.Clamp);
+                        
+                    using var activeBarPaint = new SKPaint
+                    {
+                        Shader = activeShader,
+                        IsAntialias = true
+                    };
+                    canvas.DrawRoundRect(rect, barWidth / 2f, barWidth / 2f, activeBarPaint);
+                }
+                else
+                {
+                    canvas.DrawRoundRect(rect, barWidth / 2f, barWidth / 2f, normalBarPaint);
+                }
+
+                // Top Floating Label for Highlighted Bar
+                if (i == maxIdx)
+                {
+                    using var tagPaint = new SKPaint { Color = accent.WithAlpha(40), IsAntialias = true };
+                    using var tagTextPaint = new SKPaint { Color = accent, IsAntialias = true };
+                    
+                    var tagRect = new SKRect(xCenter - 25f, yStart - 28f, xCenter + 25f, yStart - 8f);
+                    canvas.DrawRoundRect(tagRect, 4f, 4f, tagPaint);
+                    
+                    using var valueFont = new SKFont(SKTypeface.Default, 18f);
+                    canvas.DrawText(_chartData[i].Value.ToString("0.0"), xCenter, yStart - 13f, SKTextAlign.Center, valueFont, tagTextPaint);
+                }
+
+                // X-Axis Text Labels
+                string labelPrefix = _chartData[i].Label.Length > 3 ? _chartData[i].Label.Substring(0, 3).ToUpper() : _chartData[i].Label.ToUpper();
+                canvas.DrawText(labelPrefix, xCenter, h - 8, SKTextAlign.Center, textFont, labelPaint);
             }
         }
 
         // ─── Navigation ──────────────────────────────────────────────────────
+        private async void OnRecentActivityTapped(object? sender, TappedEventArgs e)
+        {
+            try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+
+            if (sender is not BindableObject bindable || bindable.BindingContext is not UserActivity activity || string.IsNullOrWhiteSpace(activity.Id))
+                return;
+
+            try
+            {
+                if (Shell.Current is not null)
+                    await Shell.Current.GoToAsync($"activitydetail?activityId={Uri.EscapeDataString(activity.Id)}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+            }
+        }
+
         private async void OnSettingsClicked(object? sender, EventArgs e)
         {
             try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }

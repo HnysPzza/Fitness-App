@@ -20,6 +20,7 @@ public partial class LanguageSelectionPage : ContentPage
         InitializeComponent();
         _settings = settings;
         _selectedLanguage = _settings.Language;
+        CurrentLanguageLabel.Text = _selectedLanguage;
         LanguageList.ItemsSource = _allLanguages;
     }
 
@@ -49,6 +50,7 @@ public partial class LanguageSelectionPage : ContentPage
             {
                 _selectedLanguage = language;
                 _settings.Language = language;
+                CurrentLanguageLabel.Text = language;
                 await DisplayAlert("Language Changed", $"Language set to {language}. Please restart the app.", "OK");
             }
         }

@@ -1,5 +1,5 @@
-using Postgrest.Attributes;
-using Postgrest.Models;
+using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
 using System.Text.Json.Serialization;
 
 namespace Fitness_App.Models;
@@ -8,6 +8,7 @@ namespace Fitness_App.Models;
 public class UserActivity : BaseModel
 {
     [PrimaryKey("id", false)]
+    [Column("id")]
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
@@ -27,6 +28,18 @@ public class UserActivity : BaseModel
     [JsonPropertyName("duration_ticks")]
     public long DurationTicks { get; set; }
 
+    [Column("avg_speed_kmh")]
+    [JsonPropertyName("avg_speed_kmh")]
+    public double? AvgSpeedKmh { get; set; }
+
+    [Column("max_speed_kmh")]
+    [JsonPropertyName("max_speed_kmh")]
+    public double? MaxSpeedKmh { get; set; }
+
+    [Column("elevation_gain_m")]
+    [JsonPropertyName("elevation_gain_m")]
+    public double? ElevationGainM { get; set; }
+
     [Column("created_at")]
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
@@ -40,13 +53,4 @@ public class UserActivity : BaseModel
 
     [JsonIgnore]
     public IReadOnlyList<ActivityRoutePoint> RoutePoints => RouteData.Points;
-
-    [JsonIgnore]
-    public double? MaxSpeedKmh => RouteData.MaxSpeedKmh;
-
-    [JsonIgnore]
-    public double? AvgSpeedKmh => RouteData.AvgSpeedKmh;
-
-    [JsonIgnore]
-    public double? ElevationGainM => RouteData.ElevationGainM;
 }

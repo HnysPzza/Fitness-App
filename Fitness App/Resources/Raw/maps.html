@@ -91,6 +91,11 @@
             logoPosition: 'bottom-left',
             fadeDuration: 0
         });
+        let _currentStyle = '__START_STYLE__';
+        let _is3D = false;
+        let _lastUserLngLat = [__START_LNG__, __START_LAT__];
+        let _lastHeadingDeg = null;
+        let _suggestedPinMarker = null;
 
         // Pulsing user location marker
         var markerEl = document.createElement('div');
@@ -111,29 +116,232 @@
 
         // 1. Center map on user
         function centerOnUser(lng, lat) {
+            syncUserLocation(lng, lat, null, true);
+        }
+
+        function setUserLocation(lng, lat) {
+            syncUserLocation(lng, lat, null, false);
+        }
+
+        function lockToUserLocation(lng, lat) {
+            syncUserLocation(lng, lat, null, true);
+        }
+
+        function projectLngLat(lng, lat, distanceMeters, bearingDeg) {
+            const earthRadiusMeters = 6378137;
+            const bearing = bearingDeg * Math.PI / 180;
+            const latRad = lat * Math.PI / 180;
+            const lngRad = lng * Math.PI / 180;
+            const angularDistance = distanceMeters / earthRadiusMeters;
+            const nextLat = Math.asin(
+                Math.sin(latRad) * Math.cos(angularDistance) +
+                Math.cos(latRad) * Math.sin(angularDistance) * Math.cos(bearing)
+            );
+            const nextLng = lngRad + Math.atan2(
+                Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latRad),
+                Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(nextLat)
+            );
+            return [nextLng * 180 / Math.PI, nextLat * 180 / Math.PI];
+        }
+
+        function createHeadingConePolygon(lng, lat, headingDeg, radiusMeters) {
+            const spreadDegrees = 24;
+            const coordinates = [[lng, lat]];
+            for (let step = -2; step <= 2; step++) {
+                coordinates.push(projectLngLat(lng, lat, radiusMeters, headingDeg + step * (spreadDegrees / 2)));
+            }
+            coordinates.push([lng, lat]);
+            return coordinates;
+        }
+
+        function calculateConeRadius() {
+            const zoom = map.getZoom();
+            // Dynamic radius based on zoom: larger at lower zoom, smaller at higher zoom
+            // Zoom 10 = ~100m, Zoom 15 = ~34m, Zoom 18 = ~15m
+            const baseRadius = 34;
+            const zoomFactor = Math.pow(2, 15 - zoom);
+            return Math.max(15, Math.min(100, baseRadius * zoomFactor));
+        }
+
+        function ensureUserHeadingLayers() {
+            // Pulse wave source
+            if (!map.getSource('user-heading-pulse')) {
+                map.addSource('user-heading-pulse', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+            }
+
+            // Main cone source
+            if (!map.getSource('user-heading-source')) {
+                map.addSource('user-heading-source', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+            }
+
+            // Pulse wave layer (rendered first, behind main cone)
+            if (!map.getLayer('user-heading-pulse')) {
+                map.addLayer({
+                    id: 'user-heading-pulse',
+                    type: 'fill',
+                    source: 'user-heading-pulse',
+                    paint: {
+                        'fill-color': '#60A5FA',
+                        'fill-opacity': 0
+                    }
+                });
+            }
+
+            // Main cone fill
+            if (!map.getLayer('user-heading-fill')) {
+                map.addLayer({
+                    id: 'user-heading-fill',
+                    type: 'fill',
+                    source: 'user-heading-source',
+                    paint: {
+                        'fill-color': '#60A5FA',
+                        'fill-opacity': 0.22
+                    }
+                });
+            }
+
+            // Main cone outline
+            if (!map.getLayer('user-heading-outline')) {
+                map.addLayer({
+                    id: 'user-heading-outline',
+                    type: 'line',
+                    source: 'user-heading-source',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#BFDBFE',
+                        'line-width': 2,
+                        'line-opacity': 0.85
+                    }
+                });
+            }
+        }
+
+        let _pulseAnimationFrame = null;
+        let _pulseStartTime = null;
+
+        function setHeadingConeData(source, lng, lat, headingDeg, radiusMeters) {
+            if (!source) return;
+            source.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [createHeadingConePolygon(lng, lat, headingDeg, radiusMeters)]
+                    },
+                    properties: {}
+                }]
+            });
+        }
+
+        function updateUserHeadingCone(lng, lat, headingDeg) {
+            ensureUserHeadingLayers();
+            const source = map.getSource('user-heading-source');
+            const pulseSource = map.getSource('user-heading-pulse');
+
+            if (!source) return;
+
+            if (headingDeg == null || isNaN(Number(headingDeg))) {
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: []
+                });
+                if (pulseSource) {
+                    pulseSource.setData({
+                        type: 'FeatureCollection',
+                        features: []
+                    });
+                }
+                if (_pulseAnimationFrame) {
+                    cancelAnimationFrame(_pulseAnimationFrame);
+                    _pulseAnimationFrame = null;
+                }
+                _pulseStartTime = null;
+                return;
+            }
+
+            const radius = calculateConeRadius();
+            const headingNum = Number(headingDeg);
+
+            setHeadingConeData(source, lng, lat, headingNum, radius);
+
+            // Start pulse animation
+            if (!_pulseStartTime) {
+                _pulseStartTime = Date.now();
+            }
+            if (!_pulseAnimationFrame) {
+                animatePulse();
+            }
+        }
+
+        function animatePulse() {
+            _pulseAnimationFrame = null;
+            if (_lastHeadingDeg == null || !_lastUserLngLat || _lastUserLngLat.length < 2) {
+                return;
+            }
+
+            const lng = _lastUserLngLat[0];
+            const lat = _lastUserLngLat[1];
+            const headingDeg = Number(_lastHeadingDeg);
+            const baseRadius = calculateConeRadius();
+            const pulseSource = map.getSource('user-heading-pulse');
+            const source = map.getSource('user-heading-source');
+            const pulseLayer = map.getLayer('user-heading-pulse');
+            if (!pulseSource || !pulseLayer || !source) return;
+
+            const pulseDuration = 2000; // 2 seconds per pulse
+            const elapsed = (Date.now() - _pulseStartTime) % pulseDuration;
+            const progress = elapsed / pulseDuration;
+
+            // Pulse expands from 1x to 1.8x radius
+            const pulseRadius = baseRadius * (1 + progress * 0.8);
+            // Opacity fades from 0.18 to 0
+            const pulseOpacity = 0.18 * (1 - progress);
+
+            setHeadingConeData(source, lng, lat, headingDeg, baseRadius);
+            setHeadingConeData(pulseSource, lng, lat, headingDeg, pulseRadius);
+
+            map.setPaintProperty('user-heading-pulse', 'fill-opacity', pulseOpacity);
+
+            _pulseAnimationFrame = requestAnimationFrame(() => {
+                animatePulse();
+            });
+        }
+
+        function syncUserLocation(lng, lat, headingDeg, followCamera) {
+            _lastUserLngLat = [lng, lat];
+
+            if (headingDeg != null && !isNaN(Number(headingDeg))) {
+                _lastHeadingDeg = Number(headingDeg);
+            }
             userMarker.setLngLat([lng, lat]);
-            map.easeTo({ center: [lng, lat], zoom: 15, duration: 350 });
+            updateUserHeadingCone(lng, lat, _lastHeadingDeg);
+
+            if (followCamera) {
+                map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15), duration: 350 });
+            }
         }
 
         // 2. Change map style
         function changeMapStyle(styleString) {
-            // styleString expected like 'dark-v11'
+            if (!styleString || styleString === _currentStyle) return;
+            _currentStyle = styleString;
             map.setStyle('mapbox://styles/mapbox/' + styleString);
-
-            // Wait for new style to load, then we must redraw routes because changing style wipes custom layers
-            map.once('style.load', () => {
-                // We'll post a message back, but WebView2 isn't standard across Maui Android/iOS identically.
-                // We'll expose a global callback pattern, or C# can wait after style switch and re-eval.
-                // For simplicity, let's keep it isolated, or let C# just re-inject.
-
-                // Workaround: when style changes, layers are lost. 
-                // The easiest pattern is telling C# "hey style loaded, send routines again"
-                // But Maui Android WebView doesn't have a standardized PostMessage.
-                // We will handle re-drawing logic gracefully.
-
-                // Let's add a custom event dispatch for the window to listen to, 
-                // but actually MAUI C# invokes JS. We can just store drawn routes locally in JS!
-            });
         }
 
         // We will store routes in JS so when style changes, we can redraw them locally!
@@ -154,54 +362,64 @@
         }
 
         const SUGGESTED_PREVIEW_ID = 'app-suggested-preview';
-        let suggestedPinMarker = null;
+        const SUGGESTED_PIN_HALO_LAYER_ID = 'suggested-destination-halo';
+        const SUGGESTED_PIN_CORE_LAYER_ID = 'suggested-destination-core';
         /** Last [lng, lat] for suggested pin — restored after style reload */
         let _suggestedPinLngLat = null;
 
         map.on('style.load', () => {
+            if (_lastUserLngLat && _lastUserLngLat.length >= 2) {
+                userMarker.setLngLat(_lastUserLngLat);
+            }
+            ensureUserHeadingLayers();
+            if (_lastUserLngLat && _lastUserLngLat.length >= 2) {
+                updateUserHeadingCone(_lastUserLngLat[0], _lastUserLngLat[1], _lastHeadingDeg);
+            }
             // Re-draw all stored routes seamlessly
             _savedRoutes.forEach(route => {
                 internalDrawRoute(route.id, route.coords, route.color);
             });
             recreateSuggestedPinAfterStyleLoad();
+
+            ensureLiveRecordingLayers();
+            if (_is3D) {
+                if (!map.getSource('mapbox-dem')) {
+                    map.addSource('mapbox-dem', {
+                        type: 'raster-dem',
+                        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                        tileSize: 512
+                    });
+                }
+                map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+            }
         });
 
         function recreateSuggestedPinAfterStyleLoad() {
             if (!_suggestedPinLngLat || _suggestedPinLngLat.length < 2) return;
-            if (suggestedPinMarker) {
-                try { suggestedPinMarker.remove(); } catch (e) { }
-                suggestedPinMarker = null;
-            }
             buildSuggestedPinMarker(_suggestedPinLngLat[0], _suggestedPinLngLat[1]);
         }
 
         function buildSuggestedPinMarker(lng, lat) {
-            const wrap = document.createElement('div');
-            wrap.className = 'suggested-pin-wrap';
-            const inner = document.createElement('div');
-            inner.className = 'suggested-pin-inner';
-            inner.innerHTML =
-                '<svg class="suggested-pin-svg" viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-                '<path fill="#FC5200" stroke="#FFFFFF" stroke-width="2" d="M24 4C14.6 4 7 11.4 7 20.5c0 14.2 17 31.5 17 31.5s17-17.3 17-31.5C41 11.4 33.4 4 24 4z"/>' +
-                '<circle cx="24" cy="20" r="6" fill="#FFFFFF"/>' +
-                '</svg>';
-            wrap.appendChild(inner);
-            suggestedPinMarker = new mapboxgl.Marker({
-                element: wrap,
-                anchor: 'bottom',
-                pitchAlignment: 'viewport',
-                rotationAlignment: 'viewport',
-                altitude: 0,
-                occludedOpacity: 0.35
-            })
+            if (_suggestedPinMarker) {
+                _suggestedPinMarker.remove();
+            }
+
+            const el = document.createElement('div');
+            el.className = 'suggested-pin-wrap';
+            el.innerHTML = '<div class="suggested-pin-inner"><svg class="suggested-pin-svg" viewBox="0 0 44 52" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pinGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD08A"/><stop offset="45%" stop-color="#FC7A1F"/><stop offset="100%" stop-color="#FC5200"/></linearGradient></defs><ellipse cx="22" cy="47" rx="10" ry="3.6" fill="#000000" fill-opacity="0.20"/><path d="M22 2C14.5 2 8.4 8.1 8.4 15.6c0 10.4 10.1 21.2 12.4 23.5.7.7 1.9.7 2.6 0 2.3-2.3 12.4-13.1 12.4-23.5C35.6 8.1 29.5 2 22 2Z" fill="url(#pinGradient)" stroke="#FFF4E6" stroke-width="2"/><ellipse cx="22" cy="15.2" rx="7.5" ry="7.5" fill="#FFF7ED" fill-opacity="0.96"/><path d="M15.7 12.8L22 9.4l6.3 3.4v6.6L22 23l-6.3-3.6v-6.6Z" fill="#FC5200" fill-opacity="0.92"/></svg></div>';
+
+            _suggestedPinMarker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
                 .setLngLat([lng, lat])
                 .addTo(map);
         }
 
+        function ensureSuggestedPinLayers() {
+        }
+
         function removeSuggestedPinOnly() {
-            if (suggestedPinMarker) {
-                try { suggestedPinMarker.remove(); } catch (e) { }
-                suggestedPinMarker = null;
+            if (_suggestedPinMarker) {
+                _suggestedPinMarker.remove();
+                _suggestedPinMarker = null;
             }
         }
 
@@ -244,8 +462,10 @@
             // Upsert: same id replaces previous (prevents stacked duplicates)
             const existing = _savedRoutes.findIndex(r => r.id === id);
             if (existing >= 0) {
+                const outlineLid = 'route-layer-outline-' + id;
                 const lid = 'route-layer-' + id;
                 unregisterRouteLayerHandlers(lid);
+                if (map.getLayer(outlineLid)) map.removeLayer(outlineLid);
                 if (map.getLayer(lid)) map.removeLayer(lid);
                 if (map.getSource('route-source-' + id)) map.removeSource('route-source-' + id);
                 _savedRoutes.splice(existing, 1);
@@ -282,11 +502,15 @@
 
         function internalDrawRoute(id, coords, colorHex) {
             const sourceId = 'route-source-' + id;
+            const outlineLayerId = 'route-layer-outline-' + id;
             const layerId = 'route-layer-' + id;
 
             unregisterRouteLayerHandlers(layerId);
 
             // Forcefully clean up lingering sources or layers to prevent "already exists" errors during style.load redraws
+            if (map.getLayer(outlineLayerId)) {
+                map.removeLayer(outlineLayerId);
+            }
             if (map.getLayer(layerId)) {
                 map.removeLayer(layerId);
             }
@@ -307,7 +531,7 @@
             });
 
             map.addLayer({
-                'id': layerId,
+                'id': outlineLayerId,
                 'type': 'line',
                 'source': sourceId,
                 'layout': {
@@ -315,9 +539,25 @@
                     'line-cap': 'round'
                 },
                 'paint': {
+                    'line-color': '#2B1106',
+                    'line-width': 11,
+                    'line-opacity': 0.96
+                }
+            });
+
+            map.addLayer({
+                'id': layerId,
+                'type': 'line',
+                'source': sourceId,
+
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
                     'line-color': colorHex,
-                    'line-width': 5,
-                    'line-opacity': 0.8
+                    'line-width': 6.5,
+                    'line-opacity': 0.96
                 }
             });
 
@@ -347,8 +587,10 @@
         function clearRoutes() {
             clearSuggestedPinStorage();
             _savedRoutes.forEach(r => {
+                const outlineLayerId = 'route-layer-outline-' + r.id;
                 const layerId = 'route-layer-' + r.id;
                 unregisterRouteLayerHandlers(layerId);
+                if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
                 if (map.getLayer(layerId)) map.removeLayer(layerId);
                 if (map.getSource('route-source-' + r.id)) map.removeSource('route-source-' + r.id);
             });
@@ -358,8 +600,10 @@
         function removeSavedRoute(id) {
             const idx = _savedRoutes.findIndex(r => r.id === id);
             if (idx < 0) return;
+            const outlineLayerId = 'route-layer-outline-' + id;
             const layerId = 'route-layer-' + id;
             unregisterRouteLayerHandlers(layerId);
+            if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
             if (map.getLayer(layerId)) map.removeLayer(layerId);
             if (map.getSource('route-source-' + id)) map.removeSource('route-source-' + id);
             _savedRoutes.splice(idx, 1);
@@ -379,7 +623,6 @@
         }
 
         // 3D terrain toggle
-        let _is3D = false;
         function toggle3D(enable) {
             _is3D = enable;
             if (enable) {
@@ -395,6 +638,93 @@
             } else {
                 map.setTerrain(null);
                 map.easeTo({ pitch: 0, duration: 800 });
+            }
+        }
+
+        // --- LIVE RECORDING (STRAVA-STYLE) --- //
+        const LIVE_RECORDING_SOURCE_ID = 'live-recording-source';
+        const LIVE_RECORDING_OUTLINE_LAYER_ID = 'live-recording-outline-layer';
+        const LIVE_RECORDING_LAYER_ID = 'live-recording-layer';
+
+        function ensureLiveRecordingLayers() {
+            if (!map.getSource(LIVE_RECORDING_SOURCE_ID)) {
+                map.addSource(LIVE_RECORDING_SOURCE_ID, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: []
+                        }
+                    }
+                });
+            }
+
+            if (!map.getLayer(LIVE_RECORDING_OUTLINE_LAYER_ID)) {
+                map.addLayer({
+                    id: LIVE_RECORDING_OUTLINE_LAYER_ID,
+                    type: 'line',
+                    source: LIVE_RECORDING_SOURCE_ID,
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#2B1106',
+                        'line-width': 12,
+                        'line-opacity': 0.96
+                    }
+                });
+            }
+
+            if (!map.getLayer(LIVE_RECORDING_LAYER_ID)) {
+                map.addLayer({
+                    id: LIVE_RECORDING_LAYER_ID,
+                    type: 'line',
+                    source: LIVE_RECORDING_SOURCE_ID,
+
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#FC5200',
+                        'line-width': 7,
+                        'line-opacity': 0.98
+                    }
+                });
+            }
+        }
+
+        /**
+         * Real-time GPS hit from C#. Updates marker, camera, and the trail line.
+         * @param {number} lng - Current Longitude
+         * @param {number} lat - Current Latitude
+         * @param {string} coordsJson - Full array of [lng, lat] history
+         */
+        function updateLiveRecording(lng, lat, coordsJson) {
+            // 1. Easing the map to the new position
+            syncUserLocation(lng, lat, _lastHeadingDeg, true);
+
+            // 2. Repainting the recorded trail
+            if (coordsJson && coordsJson.length > 2) {
+                try {
+                    const coords = JSON.parse(coordsJson);
+
+                    ensureLiveRecordingLayers();
+                    const source = map.getSource(LIVE_RECORDING_SOURCE_ID);
+                    if (source && coords && coords.length > 0) {
+                        source.setData({
+                            type: 'Feature',
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: coords
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Live Recording JSON error: ", e);
+                }
             }
         }
     </script>

@@ -23,6 +23,7 @@ public interface IProfileService
     void SaveAddress(string address);
     void SaveGender(string gender);
     void SaveProfilePhoto(string? photoPath);
+    void SyncFromSupabase(Models.UserProfile profile);
     string GetGreeting();
 }
 
@@ -123,6 +124,25 @@ public sealed class ProfileService : IProfileService
     {
         Preferences.Default.Set(PhotoKey, photoPath ?? string.Empty);
         ProfileChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Syncs a Supabase cloud profile into local Preferences so that
+    /// Home, Settings, and other pages show consistent data.
+    /// </summary>
+    public void SyncFromSupabase(Models.UserProfile profile)
+    {
+        if (!string.IsNullOrWhiteSpace(profile.FirstName))
+            SaveFirstName(profile.FirstName);
+
+        if (!string.IsNullOrWhiteSpace(profile.LastName))
+            SaveLastName(profile.LastName);
+
+        if (!string.IsNullOrWhiteSpace(profile.Gender))
+            SaveGender(profile.Gender);
+
+        if (!string.IsNullOrWhiteSpace(profile.AvatarUrl))
+            SaveProfilePhoto(profile.AvatarUrl);
     }
 
     public string GetGreeting()

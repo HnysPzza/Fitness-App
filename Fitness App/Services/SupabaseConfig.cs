@@ -1,16 +1,21 @@
 namespace Fitness_App.Services;
 
-/// <summary>
-/// ⚠️  SECURITY: Replace the placeholder values below with your real
-///     Supabase project URL and anon key from:
-///       Supabase Dashboard → Settings → API
-///
-///     This file is git-ignored so your keys are NEVER committed.
-///     If your key is ever exposed, rotate it immediately.
-/// </summary>
-internal static class SupabaseConfig
+internal static partial class SupabaseConfig
 {
-    // ── Replace these before running ────────────────────────────────────────
-    public const string Url     = "https://iodugzpjyeiykfvwzykv.supabase.co";
-    public const string AnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvZHVnenBqeWVpeWtmdnd6eWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODU0MTUsImV4cCI6MjA4NzM2MTQxNX0.0vym0OX3tUlykTDGoVqcAY2-gPqHwYg7LUbdLXTZsFA";
+    private static readonly Lazy<(string Url, string AnonKey)> Values = new(LoadValues);
+
+    public static string Url => Values.Value.Url;
+    public static string AnonKey => Values.Value.AnonKey;
+
+    private static (string Url, string AnonKey) LoadValues()
+    {
+        var url = Environment.GetEnvironmentVariable("FITNESS_APP_SUPABASE_URL") ?? string.Empty;
+        var anonKey = Environment.GetEnvironmentVariable("FITNESS_APP_SUPABASE_ANON_KEY") ?? string.Empty;
+
+        ConfigureLocal(ref url, ref anonKey);
+
+        return (url, anonKey);
+    }
+
+    static partial void ConfigureLocal(ref string url, ref string anonKey);
 }

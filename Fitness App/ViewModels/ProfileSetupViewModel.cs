@@ -175,6 +175,8 @@ public partial class ProfileSetupViewModel : ObservableObject
 
             // Profile saved → go to Home
             await Shell.Current.GoToAsync("//home");
+            await Task.Delay(150);
+            await NotificationNavigationService.HandlePendingAsync();
         }
         catch (Exception ex)
         {

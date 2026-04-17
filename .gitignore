@@ -362,6 +362,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 # -- Secrets (NEVER commit real tokens) -----------------------
-**/Services/MapboxConfig.cs
-**/Services/SupabaseConfig.cs
+**/Services/*Config.Local.cs
+**/Services/AppSecrets.Local.cs
 **/*.secrets.json
+**/debug.keystore

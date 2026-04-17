@@ -1,450 +1,636 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
-             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
-             xmlns:skia="clr-namespace:Fitness_App.UI.Skia"
-             x:Class="Fitness_App.Pages.HomePage"
-             Title="Home"
-             BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+                xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
+                xmlns:skia="clr-namespace:Fitness_App.UI.Skia"
+                x:Class="Fitness_App.Pages.HomePage"
+                Shell.NavBarIsVisible="False"
+                BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0B0F19}">
 
-    <ScrollView>
-        <Grid Padding="20,20,20,80" RowSpacing="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <ScrollView>
+            <Grid Padding="20,20,20,80" RowSpacing="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <!-- Header Section with Profile and Notifications -->
-            <Grid Grid.Row="0" ColumnSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <!-- Welcome Text -->
-                <VerticalStackLayout Spacing="2">
-                    <Label x:Name="GreetingLabel"
-                           Text="Good morning" 
-                           FontSize="14" 
-                           Opacity="0.7"
-                           TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
-                    <Label x:Name="HomeUserNameLabel"
-                           Text="Athlete 🔥" 
-                           FontSize="24" 
-                           FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
-                </VerticalStackLayout>
-
-                <!-- Notifications Button -->
-                <Border Grid.Column="1" 
-                        Style="{StaticResource NeoIconButtonBorder}"
-                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="16" />
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="#FC5200" Radius="20" Opacity="0.15" Offset="0,4" />
-                    </Border.Shadow>
-                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Notifications}" 
-                                       FontSize="22"
-                                       TextColor="{AppThemeBinding Light=#FC5200, Dark=#FF6B35}" />
-                </Border>
-
-                <!-- Profile Button -->
-                <Border Grid.Column="2" 
-                        Style="{StaticResource NeoIconButtonBorder}"
-                        BackgroundColor="{AppThemeBinding Light=#FC5200, Dark=#FF6B35}">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="16" />
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="#FC5200" Radius="20" Opacity="0.3" Offset="0,4" />
-                    </Border.Shadow>
-                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Person}" 
-                                       FontSize="22"
-                                       TextColor="#FFFFFF">
-                        <controls:IconLabel.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnSettingsClicked" />
-                        </controls:IconLabel.GestureRecognizers>
-                    </controls:IconLabel>
-                </Border>
-            </Grid>
-
-            <!-- Weekly Stats Hero Card with Mesh Gradient -->
-            <Border Grid.Row="1" 
-                    StrokeThickness="0"
-                    HeightRequest="220"
-                    Opacity="0"
-                    x:Name="HeroCard">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="24" />
-                </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="#FC5200" Radius="30" Opacity="0.2" Offset="0,8" />
-                </Border.Shadow>
-                
-                <Grid>
-                    <!-- Mesh Gradient Background -->
-                    <skia:MeshGradientView 
-                        Colors="#FC5200,#FF6B35,#FF8C42,#2563EB"
-                        IsAnimated="True" />
-                    
-                    <!-- Content Overlay -->
-                    <Grid Padding="20" RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <!-- Header -->
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            
-                            <Label Text="This Week" 
-                                   TextColor="White" 
-                                   FontSize="14"
-                                   Opacity="0.9" />
-                            
-                            <HorizontalStackLayout Grid.Column="1" Spacing="6">
-                                <controls:IconLabel 
-                                    Text="{x:Static icons:MaterialSymbols.Trending_up}" 
-                                    FontSize="18"
-                                    TextColor="#FFD60A" />
-                                <Label Text="+12%" 
-                                       TextColor="#FFD60A" 
-                                       FontSize="14"
-                                       FontAttributes="Bold" />
-                            </HorizontalStackLayout>
-                        </Grid>
-
-                        <!-- Main Stats -->
-                        <VerticalStackLayout Grid.Row="1" 
-                                            Spacing="4"
-                                            Margin="0,4,0,4">
-                            <Label Text="20.4 km" 
-                                   TextColor="White" 
-                                   FontAttributes="Bold" 
-                                   FontSize="42" />
-                            <Label Text="5 activities completed" 
-                                   TextColor="White" 
-                                   FontSize="14"
-                                   Opacity="0.9" />
-                        </VerticalStackLayout>
-
-                        <!-- Yesterday Highlight -->
-                        <Border Grid.Row="2"
-                                BackgroundColor="#26000000"
-                                Padding="14,10"
-                                StrokeThickness="0">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="12" />
-                            </Border.StrokeShape>
-                            <HorizontalStackLayout Spacing="12">
-                                <controls:IconLabel 
-                                    Text="{x:Static icons:MaterialSymbols.Directions_run}" 
-                                    FontSize="22"
-                                    TextColor="White"
-                                    VerticalOptions="Center" />
-                                
-                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                                    <Label Text="Yesterday's run" 
-                                           TextColor="White" 
-                                           FontSize="11"
-                                           Opacity="0.8" />
-                                    <Label Text="5.2 km • 28:45" 
-                                           TextColor="White" 
-                                           FontSize="13"
-                                           FontAttributes="Bold" />
-                                </VerticalStackLayout>
-                            </HorizontalStackLayout>
-                        </Border>
-                    </Grid>
-                </Grid>
-            </Border>
-
-            <!-- Quick Stats Grid -->
-            <Grid Grid.Row="2" 
-                  ColumnDefinitions="*,*,*" 
-                  ColumnSpacing="12">
-                
-                <!-- Distance -->
-                <Border Style="{StaticResource NeoCardBorder}"
-                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="20" />
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
-                                Radius="15" 
-                                Opacity="0.08" 
-                                Offset="0,4" />
-                    </Border.Shadow>
-                    <Grid Padding="16,20" RowSpacing="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        
-                        <controls:IconLabel 
-                            Text="{x:Static icons:MaterialSymbols.Route}" 
-                            FontSize="28"
-                            TextColor="#10B981"
-                            HorizontalOptions="Center" />
-                        
-                        <Label Grid.Row="1" 
-                               Text="253" 
-                               FontSize="24"
-                               FontAttributes="Bold"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
-                        
-                        <Label Grid.Row="2" 
-                               Text="Total km" 
-                               FontSize="11"
-                               Opacity="0.6"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
-                    </Grid>
-                </Border>
-
-                <!-- Activities -->
-                <Border Grid.Column="1" 
-                        Style="{StaticResource NeoCardBorder}"
-                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="20" />
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
-                                Radius="15" 
-                                Opacity="0.08" 
-                                Offset="0,4" />
-                    </Border.Shadow>
-                    <Grid Padding="16,20" RowSpacing="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        
-                        <controls:IconLabel 
-                            Text="{x:Static icons:MaterialSymbols.Sports_score}" 
-                            FontSize="28"
-                            TextColor="#FC5200"
-                            HorizontalOptions="Center" />
-                        
-                        <Label Grid.Row="1" 
-                               Text="42" 
-                               FontSize="24"
-                               FontAttributes="Bold"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
-                        
-                        <Label Grid.Row="2" 
-                               Text="Activities" 
-                               FontSize="11"
-                               Opacity="0.6"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
-                    </Grid>
-                </Border>
-
-                <!-- Time -->
-                <Border Grid.Column="2" 
-                        Style="{StaticResource NeoCardBorder}"
-                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="20" />
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
-                                Radius="15" 
-                                Opacity="0.08" 
-                                Offset="0,4" />
-                    </Border.Shadow>
-                    <Grid Padding="16,20" RowSpacing="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        
-                        <controls:IconLabel 
-                            Text="{x:Static icons:MaterialSymbols.Schedule}" 
-                            FontSize="28"
-                            TextColor="#8B5CF6"
-                            HorizontalOptions="Center" />
-                        
-                        <Label Grid.Row="1" 
-                               Text="24h" 
-                               FontSize="24"
-                               FontAttributes="Bold"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
-                        
-                        <Label Grid.Row="2" 
-                               Text="Total time" 
-                               FontSize="11"
-                               Opacity="0.6"
-                               HorizontalOptions="Center"
-                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
-                    </Grid>
-                </Border>
-            </Grid>
-
-            <!-- Suggested Routes Section -->
-            <VerticalStackLayout Grid.Row="3" Spacing="16">
-                <Grid>
+                <!-- Header Section with Profile and Notifications -->
+                <Grid Grid.Row="0" ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    
-                    <Label Text="Suggested Routes 📍" 
-                           FontAttributes="Bold" 
-                           FontSize="20"
-                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
-                    
-                    <Label Grid.Column="1" 
-                           Text="View all →" 
-                           FontSize="14"
-                           TextColor="#FC5200"
-                           FontAttributes="Bold"
-                           VerticalOptions="Center" />
+
+                    <!-- Welcome Text -->
+                    <VerticalStackLayout Spacing="2">
+                        <Label x:Name="GreetingLabel"
+                            Text="Good morning" 
+                            FontSize="14" 
+                            Opacity="0.7"
+                            TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        <Label x:Name="HomeUserNameLabel"
+                            Text="Athlete 🔥" 
+                            FontSize="24" 
+                            FontAttributes="Bold"
+                            TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    </VerticalStackLayout>
+
+                    <!-- Notifications Button -->
+                    <Border Grid.Column="1" 
+                            Style="{StaticResource NeoIconButtonBorder}"
+                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="#FC5200" Radius="20" Opacity="0.15" Offset="0,4" />
+                        </Border.Shadow>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnReminderTapped" />
+                        </Border.GestureRecognizers>
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Notifications}" 
+                                        FontSize="22"
+                                        TextColor="{AppThemeBinding Light=#FC5200, Dark=#FF6B35}" />
+                    </Border>
+
+                    <!-- Profile Button -->
+                    <Border Grid.Column="2" 
+                            Style="{StaticResource NeoIconButtonBorder}"
+                            BackgroundColor="{AppThemeBinding Light=#FC5200, Dark=#FF6B35}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="#FC5200" Radius="20" Opacity="0.3" Offset="0,4" />
+                        </Border.Shadow>
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Person}" 
+                                        FontSize="22"
+                                        TextColor="#FFFFFF">
+                            <controls:IconLabel.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSettingsClicked" />
+                            </controls:IconLabel.GestureRecognizers>
+                        </controls:IconLabel>
+                    </Border>
                 </Grid>
 
-                <CollectionView ItemsSource="{Binding SuggestedLocations}" 
-                               HeightRequest="160">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="16" />
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border WidthRequest="280"
-                                    StrokeThickness="0">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="20" />
-                                </Border.StrokeShape>
-                                <Border.Shadow>
-                                    <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
-                                            Radius="20" 
-                                            Opacity="0.1" 
-                                            Offset="0,6" />
-                                </Border.Shadow>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnLocationCardTapped" />
-                                </Border.GestureRecognizers>
-                                
-                                <Grid>
-                                    <!-- Background Gradient -->
-                                    <Border StrokeThickness="0">
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Border Padding="14,12"
+                            StrokeThickness="0"
+                            BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#2B1E13}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnReminderTapped" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Alarm}"
+                                                FontSize="20"
+                                                VerticalOptions="Center"
+                                                TextColor="#FC5200" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="Workout reminder"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#9A3412, Dark=#FDBA74}" />
+                                <Label Text="{Binding ReminderSummary}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light=#7C2D12, Dark=#FFEDD5}" />
+                            </VerticalStackLayout>
+                            <controls:IconLabel Grid.Column="2"
+                                                Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                                FontSize="20"
+                                                VerticalOptions="Center"
+                                                TextColor="#FC5200" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Padding="16,12"
+                            StrokeThickness="0"
+                            BackgroundColor="{AppThemeBinding Light=#111827, Dark=#131C2E}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Local_fire_department}"
+                                                FontSize="20"
+                                                HorizontalOptions="Center"
+                                                TextColor="#FB923C" />
+                            <Label Text="{Binding CurrentStreak, StringFormat='{}{0}d'}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <VerticalStackLayout Grid.Row="2" Spacing="16">
+                    <Border Padding="20"
+                            StrokeThickness="0"
+                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="28" />
+                        </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}"
+                                    Radius="20"
+                                    Opacity="0.08"
+                                    Offset="0,8" />
+                        </Border.Shadow>
+                        <VerticalStackLayout Spacing="16">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="This week"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                    <Label Text="{Binding WeekDeltaText}"
+                                           FontSize="12"
+                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                </VerticalStackLayout>
+                                <Border Grid.Column="1"
+                                        Padding="10,6"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E293B}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <HorizontalStackLayout Spacing="6">
+                                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Trending_up}"
+                                                            FontSize="16"
+                                                            VerticalOptions="Center"
+                                                            TextColor="#2563EB" />
+                                        <Label Text="{Binding WeekDistance, StringFormat='{}{0} km'}"
+                                               FontSize="13"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#1E3A8A, Dark=#BFDBFE}" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                <Border Padding="14"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#1B263B}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="18" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="8">
+                                        <Label Text="Sessions"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                        <Label Text="{Binding WeekActivities}"
+                                               FontSize="24"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                    </VerticalStackLayout>
+                                </Border>
+
+                                <Border Grid.Column="1"
+                                        Padding="14"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#1B263B}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="18" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="8">
+                                        <Label Text="Active time"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                        <Label Text="{Binding WeekTime}"
+                                               FontSize="24"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Quick sport start"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                        <CollectionView ItemsSource="{Binding QuickSports}"
+                                        HeightRequest="112"
+                                        HorizontalScrollBarVisibility="Never">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="12" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border WidthRequest="112"
+                                            Padding="14"
+                                            StrokeThickness="0"
+                                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="22" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnQuickSportTapped" />
+                                        </Border.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="10">
+                                            <Label Text="{Binding Icon}"
+                                                   FontSize="26" />
+                                            <Label Text="{Binding Sport}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   LineBreakMode="TailTruncation"
+                                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                            <Label Text="{Binding Subtitle}"
+                                                   FontSize="11"
+                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <Border Grid.Row="4"
+                        Padding="18"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26" />
+                    </Border.StrokeShape>
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}"
+                                Radius="20"
+                                Opacity="0.08"
+                                Offset="0,8" />
+                    </Border.Shadow>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnLastActivityTapped" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border WidthRequest="52"
+                                HeightRequest="52"
+                                StrokeThickness="0"
+                                BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#2B1E13}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Insights}"
+                                                FontSize="24"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center"
+                                                TextColor="#FC5200" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Latest activity"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            <Label Text="{Binding LastActivityTitle}"
+                                   FontSize="17"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                            <Label Text="{Binding LastActivitySubtitle}"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            <Label Text="{Binding LastActivityMetric}"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   TextColor="#FC5200" />
+                        </VerticalStackLayout>
+                        <controls:IconLabel Grid.Column="2"
+                                            Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                            FontSize="22"
+                                            VerticalOptions="Center"
+                                            TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="5"
+                        Padding="20"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="28" />
+                    </Border.StrokeShape>
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}"
+                                Radius="20"
+                                Opacity="0.08"
+                                Offset="0,8" />
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <VerticalStackLayout Spacing="3">
+                                <Label Text="{Binding CurrentPlanTitle}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                <Label Text="{Binding CurrentPlanSummary}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Custom"
+                                    Clicked="OnCreateCustomPlanClicked"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="#FC5200"
+                                    BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#2B1E13}"
+                                    CornerRadius="18"
+                                    Padding="14,8" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Label Text="{Binding CurrentPlanDuration}"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding CurrentPlanProgress}"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   TextColor="#10B981" />
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding CurrentPlanWorkouts}"
+                                        SelectionMode="None"
+                                        HeightRequest="220">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,10"
+                                            Padding="14"
+                                            StrokeThickness="0"
+                                            BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#1B263B}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnPlanWorkoutTapped" />
+                                        </Border.GestureRecognizers>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                            <Border WidthRequest="40"
+                                                    HeightRequest="40"
+                                                    StrokeThickness="0"
+                                                    BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#2B1E13}">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="14" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding DayLabel}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center"
+                                                       TextColor="#FC5200" />
+                                            </Border>
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                <Label Text="{Binding Title}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                                <Label Text="{Binding Sport}"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                                                <Label Text="{Binding TargetLabel}"
+                                                       FontSize="12"
+                                                       TextColor="#FC5200" />
+                                            </VerticalStackLayout>
+                                            <controls:IconLabel Grid.Column="2"
+                                                                Text="{x:Static icons:MaterialSymbols.Check_circle}"
+                                                                FontSize="20"
+                                                                VerticalOptions="Center"
+                                                                TextColor="#10B981" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Label Text="Templates"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                        <CollectionView ItemsSource="{Binding PlanTemplates}"
+                                        HeightRequest="118"
+                                        HorizontalScrollBarVisibility="Never">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="12" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border WidthRequest="188"
+                                            Padding="16"
+                                            StrokeThickness="0"
+                                            BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#1B263B}">
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="20" />
                                         </Border.StrokeShape>
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#2563EB" Offset="0" />
-                                                <GradientStop Color="#1E3A8A" Offset="1" />
-                                            </LinearGradientBrush>
-                                        </Border.Background>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnPlanTemplateTapped" />
+                                        </Border.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="8">
+                                            <Label Text="{Binding Title}"
+                                                   FontSize="15"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                                            <Label Text="{Binding Description}"
+                                                   FontSize="12"
+                                                   MaxLines="2"
+                                                   LineBreakMode="TailTruncation"
+                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                            <Label Text="{Binding DurationDays, StringFormat='{}{0} day plan'}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#FC5200" />
+                                        </VerticalStackLayout>
                                     </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Suggested Routes Section -->
+                <VerticalStackLayout Grid.Row="6" Spacing="18">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Suggested routes" 
+                                   FontAttributes="Bold" 
+                                   FontSize="20"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                            <Label Text="Popular trails near you"
+                                   FontSize="13"
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                        </VerticalStackLayout>
+                        
+                        <Border Grid.Column="1"
+                                Padding="12,8"
+                                StrokeThickness="0"
+                                BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#1E293B}"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <HorizontalStackLayout Spacing="6">
+                                <Label Text="Explore" 
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                       VerticalOptions="Center" />
+                                <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Chevron_right}"
+                                                    FontSize="18"
+                                                    TextColor="#FC5200"
+                                                    VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding SuggestedLocations}" 
+                                    HeightRequest="200"
+                                    HorizontalScrollBarVisibility="Never">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="14" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border WidthRequest="320"
+                                        Padding="0"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="24" />
+                                    </Border.StrokeShape>
+                                    <Border.Shadow>
+                                        <Shadow Brush="{AppThemeBinding Light=#0F172A, Dark=#000000}" 
+                                                Radius="24" 
+                                                Opacity="0.12" 
+                                                Offset="0,8" />
+                                    </Border.Shadow>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnLocationCardTapped" />
+                                    </Border.GestureRecognizers>
                                     
-                                    <!-- Content -->
-                                    <Grid Padding="20" RowSpacing="12">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="*" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        
-                                        <!-- Location Icon -->
-                                        <Border HeightRequest="48"
-                                               WidthRequest="48"
-                                               BackgroundColor="#26FFFFFF"
-                                               HorizontalOptions="Start"
-                                               VerticalOptions="Start">
+                                    <Grid RowDefinitions="Auto,*" RowSpacing="0">
+                                        <!-- Gradient Header -->
+                                        <Border Grid.Row="0"
+                                                HeightRequest="100"
+                                                StrokeThickness="0">
                                             <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="14" />
+                                                <RoundRectangle CornerRadius="24,24,0,0" />
                                             </Border.StrokeShape>
-                                            <controls:IconLabel 
-                                                Text="{x:Static icons:MaterialSymbols.Location_on}" 
-                                                FontSize="24"
-                                                TextColor="White"
-                                                HorizontalOptions="Center"
-                                                VerticalOptions="Center" />
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FC5200" Offset="0" />
+                                                    <GradientStop Color="#FF6B35" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Grid Padding="18,16">
+                                                <Border HeightRequest="44"
+                                                        WidthRequest="44"
+                                                        BackgroundColor="#33FFFFFF"
+                                                        HorizontalOptions="Start"
+                                                        VerticalOptions="Start">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="12" />
+                                                    </Border.StrokeShape>
+                                                    <controls:IconLabel 
+                                                        Text="{x:Static icons:MaterialSymbols.Location_on}" 
+                                                        FontSize="22"
+                                                        TextColor="White"
+                                                        HorizontalOptions="Center"
+                                                        VerticalOptions="Center" />
+                                                </Border>
+                                            </Grid>
                                         </Border>
                                         
-                                        <!-- Location Info -->
-                                        <VerticalStackLayout Grid.Row="1" Spacing="6">
+                                        <!-- Content Section -->
+                                        <VerticalStackLayout Grid.Row="1" 
+                                                             Padding="18,14,18,18" 
+                                                             Spacing="10">
                                             <Label Text="{Binding Name}" 
                                                    FontAttributes="Bold" 
-                                                   FontSize="18"
-                                                   TextColor="White"
-                                                   LineBreakMode="TailTruncation" />
+                                                   FontSize="17"
+                                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
+                                                   LineBreakMode="TailTruncation"
+                                                   MaxLines="1" />
                                             
-                                            <HorizontalStackLayout Spacing="12">
-                                                <HorizontalStackLayout Spacing="4">
-                                                    <controls:IconLabel 
-                                                        Text="{x:Static icons:MaterialSymbols.Route}" 
-                                                        FontSize="16"
-                                                        TextColor="White"
-                                                        Opacity="0.9" />
-                                                    <Label Text="{Binding DistanceKm, StringFormat='{0:F1} km'}" 
-                                                           TextColor="White"
-                                                           FontSize="14"
-                                                           Opacity="0.9" />
-                                                </HorizontalStackLayout>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                                <Border Padding="10,6"
+                                                        StrokeThickness="0"
+                                                        BackgroundColor="{AppThemeBinding Light=#F0FDF4, Dark=#1B2E23}">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="12" />
+                                                    </Border.StrokeShape>
+                                                    <HorizontalStackLayout Spacing="5">
+                                                        <controls:IconLabel 
+                                                            Text="{x:Static icons:MaterialSymbols.Route}" 
+                                                            FontSize="15"
+                                                            TextColor="#10B981"
+                                                            VerticalOptions="Center" />
+                                                        <Label Text="{Binding DistanceKm, StringFormat='{0:F1} km'}" 
+                                                               TextColor="#10B981"
+                                                               FontSize="13"
+                                                               FontAttributes="Bold"
+                                                               VerticalOptions="Center" />
+                                                    </HorizontalStackLayout>
+                                                </Border>
                                                 
-                                                <HorizontalStackLayout Spacing="4">
-                                                    <controls:IconLabel 
-                                                        Text="{x:Static icons:MaterialSymbols.Schedule}" 
-                                                        FontSize="16"
-                                                        TextColor="White"
-                                                        Opacity="0.9" />
-                                                    <Label Text="{Binding EstimatedMinutes, StringFormat='~{0} min'}" 
-                                                           TextColor="White"
-                                                           FontSize="14"
-                                                           Opacity="0.9" />
-                                                </HorizontalStackLayout>
-                                            </HorizontalStackLayout>
+                                                <Border Grid.Column="2"
+                                                        Padding="10,6"
+                                                        StrokeThickness="0"
+                                                        BackgroundColor="{AppThemeBinding Light=#F5F3FF, Dark=#2B1E3B}">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="12" />
+                                                    </Border.StrokeShape>
+                                                    <HorizontalStackLayout Spacing="5">
+                                                        <controls:IconLabel 
+                                                            Text="{x:Static icons:MaterialSymbols.Schedule}" 
+                                                            FontSize="15"
+                                                            TextColor="#8B5CF6"
+                                                            VerticalOptions="Center" />
+                                                        <Label Text="{Binding EstimatedMinutes, StringFormat='~{0} min'}" 
+                                                               TextColor="#8B5CF6"
+                                                               FontSize="13"
+                                                               FontAttributes="Bold"
+                                                               VerticalOptions="Center" />
+                                                    </HorizontalStackLayout>
+                                                </Border>
+                                            </Grid>
                                         </VerticalStackLayout>
                                     </Grid>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
 
-            <!-- Quick Start Button (FAB-style) -->
-            <Button Grid.Row="4"
-                    Text="Start Activity"
-                    FontSize="18"
-                    FontAttributes="Bold"
-                    TextColor="White"
-                    HeightRequest="64"
-                    CornerRadius="32"
-                    Margin="0,16,0,0">
-                <Button.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#FC5200" Offset="0" />
-                        <GradientStop Color="#FF6B35" Offset="1" />
-                    </LinearGradientBrush>
-                </Button.Background>
-                <Button.Shadow>
-                    <Shadow Brush="#FC5200" Radius="25" Opacity="0.4" Offset="0,8" />
-                </Button.Shadow>
-            </Button>
+                <!-- Quick Start Button (FAB-style) -->
+                <Button Grid.Row="7"
+                        Text="Start a workout"
+                        Clicked="OnStartWorkoutClicked"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        TextColor="White"
+                        HeightRequest="64"
+                        CornerRadius="32"
+                        Margin="0,16,0,0">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FC5200" Offset="0" />
+                            <GradientStop Color="#FF6B35" Offset="1" />
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Button.Shadow>
+                        <Shadow Brush="#FC5200" Radius="25" Opacity="0.4" Offset="0,8" />
+                    </Button.Shadow>
+                </Button>
 
-        </Grid>
-    </ScrollView>
-</ContentPage>
+            </Grid>
+        </ScrollView>
+    </ContentPage>

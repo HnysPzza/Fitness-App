@@ -7,6 +7,7 @@ public partial class SendFeedbackPage : ContentPage
     public SendFeedbackPage()
     {
         InitializeComponent();
+        UpdateTypeUI();
     }
 
     private void OnTypeSelected(object? sender, TappedEventArgs e)
@@ -22,11 +23,10 @@ public partial class SendFeedbackPage : ContentPage
     private void UpdateTypeUI()
     {
         var activeStroke = Color.FromArgb("#FC5200");
-        var inactiveStroke = Application.Current?.RequestedTheme == AppTheme.Dark
-            ? Color.FromArgb("#444444") : Color.FromArgb("#E0E0E0");
+        var inactiveStroke = Color.FromArgb("#243041");
 
         var activeTextColor = Color.FromArgb("#FC5200");
-        var inactiveTextColor = Color.FromArgb("#9E9E9E");
+        var inactiveTextColor = Color.FromArgb("#94A3B8");
 
         BugBorder.Stroke = _selectedType == "Bug" ? activeStroke : inactiveStroke;
         SuggestionBorder.Stroke = _selectedType == "Suggestion" ? activeStroke : inactiveStroke;

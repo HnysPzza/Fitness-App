@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Android linker preserve rules.
+  This tells the R8 linker to KEEP the listed types/members even when
+  they are only referenced via XAML or Supabase reflection (not direct
+  C# references) — the primary cause of release-mode crashes.
+-->
+<linker>
+
+  <!-- ── MAUI / XAML runtime ── -->
+  <assembly fullname="Microsoft.Maui.Controls">
+    <type fullname="Microsoft.Maui.Controls.Xaml.XamlLoader" preserve="all" />
+    <type fullname="Microsoft.Maui.Controls.Internals.ResourceLoader" preserve="all" />
+    <type fullname="Microsoft.Maui.Controls.ContentPage" preserve="all" />
+    <type fullname="Microsoft.Maui.Controls.Shell" preserve="all" />
+  </assembly>
+
+  <!-- ── Our own app namespace ── -->
+  <assembly fullname="Fitness App">
+    <!-- Pages referenced only by Shell route strings -->
+    <type fullname="Fitness_App.Pages.HomePage" preserve="all" />
+    <type fullname="Fitness_App.Pages.MapsPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.RecordPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.ProgressPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.YouPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.LoginPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.RegisterPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.ProfileSetupPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.LoadingPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.EmailVerificationPage" preserve="all" />
+
+    <type fullname="Fitness_App.Pages.ActivityDetailPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.SettingsPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.GeneralSettingsPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.EditProfilePage" preserve="all" />
+    <type fullname="Fitness_App.Pages.WorkoutRemindersPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.ThemeSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.AccentColorSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.FontSizeSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.LanguageSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.UnitsSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.DateTimeFormatSelectionPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.ChangePasswordPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.TwoFactorAuthPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.DataSharingPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.DownloadMyDataPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.LinkedAppsPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.WearableDevicesPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.HelpFaqPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.SendFeedbackPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.TermsOfServicePage" preserve="all" />
+    <type fullname="Fitness_App.Pages.PrivacyPolicyPage" preserve="all" />
+    <type fullname="Fitness_App.Pages.SwitchAccountPage" preserve="all" />
+
+    <!-- ViewModels referenced via DataBinding -->
+    <type fullname="Fitness_App.Pages.HomePageViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.ProgressViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.YouProgressViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.LoginViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.RegisterViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.EmailVerificationViewModel" preserve="all" />
+    <type fullname="Fitness_App.ViewModels.ProfileSetupViewModel" preserve="all" />
+
+    <!-- Services - needed by DI reflection -->
+    <type fullname="Fitness_App.Services.SupabaseService" preserve="all" />
+    <type fullname="Fitness_App.Services.ProfileService" preserve="all" />
+    <type fullname="Fitness_App.Services.StatsService" preserve="all" />
+    <type fullname="Fitness_App.Services.SettingsService" preserve="all" />
+    <type fullname="Fitness_App.Services.ThemeService" preserve="all" />
+    <type fullname="Fitness_App.Services.SuggestedLocationsService" preserve="all" />
+    <type fullname="Fitness_App.Services.MapboxRoutingService" preserve="all" />
+    <type fullname="Fitness_App.Services.ActivitySaveNotifier" preserve="all" />
+    <type fullname="Fitness_App.Services.SupabaseSessionPersistence" preserve="all" />
+
+    <!-- UI controls registered as handlers -->
+    <type fullname="Fitness_App.UI.Skia.ShimmerView" preserve="all" />
+    <type fullname="Fitness_App.UI.Skia.MeshGradientView" preserve="all" />
+    <type fullname="Fitness_App.UI.Skia.RunnerLoadingView" preserve="all" />
+    <type fullname="Fitness_App.UI.Controls.IconLabel" preserve="all" />
+
+    <!-- Data models used with Supabase Postgrest reflection -->
+    <type fullname="Fitness_App.Models.UserProfile" preserve="all" />
+    <type fullname="Fitness_App.Models.ActivityRecord" preserve="all" />
+
+    <!-- RecordPage inline types -->
+    <type fullname="Fitness_App.Pages.SportOption" preserve="all" />
+    <type fullname="Fitness_App.Pages.SportCategoryGroup" preserve="all" />
+
+    <!-- AppShell + App -->
+    <type fullname="Fitness_App.AppShell" preserve="all" />
+    <type fullname="Fitness_App.App" preserve="all" />
+  </assembly>
+
+  <!-- ── Supabase / Postgrest models (reflection-heavy JSON de/serialize) ── -->
+  <assembly fullname="Supabase">
+    <type fullname="Supabase.Client" preserve="all" />
+  </assembly>
+  <assembly fullname="Supabase.Postgrest">
+    <type fullname="Supabase.Postgrest.Models.BaseModel" preserve="all" />
+  </assembly>
+  <assembly fullname="Supabase.Gotrue">
+    <type fullname="Supabase.Gotrue.Session" preserve="all" />
+    <type fullname="Supabase.Gotrue.User" preserve="all" />
+  </assembly>
+
+  <!-- ── System components needed at runtime ── -->
+  <assembly fullname="System.Net.Http" />
+  <assembly fullname="System.Text.Json" />
+
+</linker>

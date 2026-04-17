@@ -1,10 +1,331 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Fitness_App.UI.Controls"
+             xmlns:icons="clr-namespace:Fitness_App.UI.Icons"
              x:Class="Fitness_App.Pages.MapsPage"
-             Title="Maps">
+             BackgroundColor="#0F172A"
+             Shell.NavBarIsVisible="False">
 
-    <Grid Padding="20">
-        <Label Text="Maps (Phase 2)" FontSize="20" FontAttributes="Bold" />
+    <Grid>
+        <!-- LAYER 0: Map WebView -->
+        <WebView x:Name="MapWebView" ZIndex="0" />
+
+        <!-- LAYER 1: Loading overlay -->
+        <Grid x:Name="MapLoadingOverlay" ZIndex="1" BackgroundColor="#CC0F172A">
+            <Border Padding="20,18"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    StrokeThickness="0"
+                    BackgroundColor="#EA0F172A">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="26" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="14">
+                    <ActivityIndicator IsRunning="True" Color="#FC5200"
+                                       WidthRequest="32" HeightRequest="32"
+                                       VerticalOptions="Center" />
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Text="Loading map" TextColor="White" FontSize="16" FontAttributes="Bold" />
+                        <Label Text="Just a moment…" TextColor="#94A3B8" FontSize="12" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- LAYER 2: Route banner -->
+        <Border x:Name="RouteBanner" IsVisible="False"
+                ZIndex="2"
+                Margin="16,56,16,0"
+                Padding="14,10"
+                VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                BackgroundColor="#DD111827"
+                StrokeThickness="0">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="18" />
+            </Border.StrokeShape>
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Suggested route" FontSize="11" TextColor="#94A3B8" />
+                <Label x:Name="RouteTitleLabel" Text="Route" FontSize="15"
+                       FontAttributes="Bold" TextColor="White" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- LAYER 3: Floating FABs (Map style + 3D) -->
+        <VerticalStackLayout ZIndex="3" Spacing="12" Margin="0,-40,16,0"
+                             VerticalOptions="Center" HorizontalOptions="End">
+            <!-- Map style button -->
+            <Border WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="#C0141414" Stroke="#14FFFFFF" StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Radius="12" Opacity="0.4" Offset="0,4" />
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMapStyleIconTapped" />
+                </Border.GestureRecognizers>
+                <!-- Stack style map icon -->
+                <Path Data="M 2 6 L 12 2 L 22 6 L 12 10 Z  M 2 12 L 12 16 L 22 12 M 2 18 L 12 22 L 22 18"
+                      InputTransparent="True"
+                      Fill="Transparent" Stroke="White" StrokeThickness="1.5"
+                      HorizontalOptions="Center" VerticalOptions="Center" WidthRequest="24" HeightRequest="24" />
+            </Border>
+
+            <!-- 3D button -->
+            <Border WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="#C0141414" Stroke="#14FFFFFF" StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Radius="12" Opacity="0.4" Offset="0,4" />
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnThreeDClicked" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="-4" HorizontalOptions="Center" VerticalOptions="Center" InputTransparent="True">
+                    <!-- Tilted grid perspective path representing 3D view -->
+                    <Path x:Name="FloatingThreeDPath"
+                          Data="M 4 10 L 20 10 L 16 2 L 8 2 Z M 12 2 L 12 10 M 6 6 L 18 6"
+                          Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.5"
+                          WidthRequest="24" HeightRequest="12" Opacity="0.8" HorizontalOptions="Center" />
+                    <Label x:Name="FloatingThreeDLabel" Text="3D" FontSize="9" FontAttributes="Bold" TextColor="#FFFFFF" Opacity="0.6" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Location lock button -->
+            <Border WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="#C0141414" Stroke="#14FFFFFF" StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Radius="12" Opacity="0.4" Offset="0,4" />
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLocationLockTapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="-4" HorizontalOptions="Center" VerticalOptions="Center" InputTransparent="True">
+                    <Path x:Name="FloatingLocationPath"
+                          Data="M 12 2 A 10 10 0 1 1 11.99 2 Z M 12 6 A 6 6 0 1 0 12 18 A 6 6 0 1 0 12 6 Z M 12 10 A 2 2 0 1 1 11.99 10 Z M 12 0 L 12 4 M 24 12 L 20 12 M 12 24 L 12 20 M 0 12 L 4 12"
+                          Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.4"
+                          WidthRequest="24" HeightRequest="24" Opacity="0.8" HorizontalOptions="Center" />
+                    <Label x:Name="FloatingLocationLabel" Text="LOCK" FontSize="8" FontAttributes="Bold" TextColor="#FFFFFF" Opacity="0.6" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+
+        <Grid x:Name="StyleSelectorLayer"
+              ZIndex="4"
+              IsVisible="False"
+              InputTransparent="True"
+              CascadeInputTransparent="False">
+            <!-- LAYER 4: Backdrop (semi-transparent, dismisses sheet) -->
+            <Grid x:Name="StyleSelectorBackdrop"
+                  ZIndex="0"
+                  IsVisible="True"
+                  BackgroundColor="#70000000"
+                  Opacity="0">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackdropTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- LAYER 5: Premium Style selector bottom sheet -->
+            <Border x:Name="StyleSelectorSheet"
+                    ZIndex="1"
+                    IsVisible="True"
+                    VerticalOptions="End"
+                    HorizontalOptions="Fill"
+                    Margin="12,0,12,16"
+                    HeightRequest="320"
+                    BackgroundColor="#F2121212"
+                    Stroke="#1AFFFFFF"
+                    StrokeThickness="1"
+                    TranslationY="400">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#000000" Radius="24" Opacity="0.6" Offset="0,-4" />
+            </Border.Shadow>
+
+            <Grid RowDefinitions="Auto,Auto,Auto,*">
+                
+                <!-- Pull Handle -->
+                <BoxView Grid.Row="0" WidthRequest="36" HeightRequest="4" CornerRadius="2"
+                         BackgroundColor="#4DFFFFFF" HorizontalOptions="Center" Margin="0,10,0,0" />
+
+                <!-- Header Content -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="20,16,20,6">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="MAP STYLE" FontSize="12" FontAttributes="Bold" TextColor="#FFFFFF" Opacity="0.7" CharacterSpacing="1.2" />
+                        <Label Text="Choose a map look with matching live preview cards." FontSize="12" TextColor="#94A3B8" />
+                    </VerticalStackLayout>
+                    <Border Padding="10,4"
+                            BackgroundColor="#14212B36"
+                            Stroke="#1FFFFFFF"
+                            StrokeThickness="1"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <Label Text="Tap a card to apply" FontSize="10" FontAttributes="Bold" TextColor="#E2E8F0" />
+                    </Border>
+                </Grid>
+
+                <Border Grid.Row="2"
+                        Margin="20,0,20,6"
+                        Padding="14,10"
+                        BackgroundColor="#141E293B"
+                        Stroke="#162B3648"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <Label Text="◎" FontSize="14" TextColor="#FC5200" VerticalOptions="Center" />
+                        <Label Text="The drawer stays collapsible and each preview card applies its real map style instantly." FontSize="12" TextColor="#CBD5E1" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Scrollable Horizontal Style Cards -->
+                <ScrollView Grid.Row="3" Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,0,0,14">
+                    <HorizontalStackLayout Spacing="14" Padding="20,8,20,0">
+
+                        <!-- Standard (Streets) -->
+                        <AbsoluteLayout WidthRequest="118" HeightRequest="168">
+                            <Border x:Name="StreetsCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,118,168"
+                                    BackgroundColor="#1A1A1A" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStreetsStyleTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="94,Auto,Auto,*" RowSpacing="0">
+                                    <Image Source="map_style_streets.jpg" Aspect="AspectFill" Grid.Row="0" />
+                                    <Label Grid.Row="1" Text="Standard" Margin="12,10,12,0" FontSize="13" FontAttributes="Bold" TextColor="White" />
+                                    <Label Grid.Row="2" Text="City roads and labels" Margin="12,2,12,0" FontSize="11" TextColor="#94A3B8" />
+                                    <Label x:Name="StreetsCheck" Text="Tap to apply" Grid.Row="3"
+                                           Margin="12,10,12,12" FontSize="11" TextColor="White" HorizontalTextAlignment="Start" VerticalOptions="End" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="StreetsBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="90,10,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label Text="✓" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Outdoors -->
+                        <AbsoluteLayout WidthRequest="118" HeightRequest="168">
+                            <Border x:Name="OutdoorsCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,118,168"
+                                    BackgroundColor="#1A1A1A" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnOutdoorsStyleTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="94,Auto,Auto,*" RowSpacing="0">
+                                    <Image Source="map_style_outdoors.jpg" Aspect="AspectFill" Grid.Row="0" />
+                                    <Label Grid.Row="1" Text="Outdoors" Margin="12,10,12,0" FontSize="13" FontAttributes="Bold" TextColor="White" />
+                                    <Label Grid.Row="2" Text="Terrain and parks focus" Margin="12,2,12,0" FontSize="11" TextColor="#94A3B8" />
+                                    <Label x:Name="OutdoorsCheck" Text="Tap to apply" Grid.Row="3"
+                                           Margin="12,10,12,12" FontSize="11" TextColor="White" HorizontalTextAlignment="Start" VerticalOptions="End" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="OutdoorsBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="90,10,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label Text="✓" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Satellite -->
+                        <AbsoluteLayout WidthRequest="118" HeightRequest="168">
+                            <Border x:Name="SatelliteCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,118,168"
+                                    BackgroundColor="#1A1A1A" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSatelliteStyleTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="94,Auto,Auto,*" RowSpacing="0">
+                                    <Image Source="map_style_satellite.jpg" Aspect="AspectFill" Grid.Row="0" />
+                                    <Label Grid.Row="1" Text="Satellite" Margin="12,10,12,0" FontSize="13" FontAttributes="Bold" TextColor="White" />
+                                    <Label Grid.Row="2" Text="Imagery with road labels" Margin="12,2,12,0" FontSize="11" TextColor="#94A3B8" />
+                                    <Label x:Name="SatelliteCheck" Text="Tap to apply" Grid.Row="3"
+                                           Margin="12,10,12,12" FontSize="11" TextColor="White" HorizontalTextAlignment="Start" VerticalOptions="End" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="SatelliteBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="90,10,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label Text="✓" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Dark -->
+                        <AbsoluteLayout WidthRequest="118" HeightRequest="168">
+                            <Border x:Name="DarkCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,118,168"
+                                    BackgroundColor="#1A1A1A" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnDarkStyleTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="94,Auto,Auto,*" RowSpacing="0">
+                                    <Image Source="map_style_dark.jpg" Aspect="AspectFill" Grid.Row="0" />
+                                    <Label Grid.Row="1" Text="Dark" Margin="12,10,12,0" FontSize="13" FontAttributes="Bold" TextColor="White" />
+                                    <Label Grid.Row="2" Text="Night mode contrast" Margin="12,2,12,0" FontSize="11" TextColor="#94A3B8" />
+                                    <Label x:Name="DarkCheck" Text="Tap to apply" Grid.Row="3"
+                                           Margin="12,10,12,12" FontSize="11" TextColor="White" HorizontalTextAlignment="Start" VerticalOptions="End" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="DarkBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="90,10,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label Text="✓" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </AbsoluteLayout>
+
+                        <!-- Light -->
+                        <AbsoluteLayout WidthRequest="118" HeightRequest="168">
+                            <Border x:Name="LightCard" Padding="0" AbsoluteLayout.LayoutBounds="0,0,118,168"
+                                    BackgroundColor="#1A1A1A" Stroke="#00000000" StrokeThickness="2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnLightStyleTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid RowDefinitions="94,Auto,Auto,*" RowSpacing="0">
+                                    <Image Source="map_style_light.jpg" Aspect="AspectFill" Grid.Row="0" />
+                                    <Label Grid.Row="1" Text="Light" Margin="12,10,12,0" FontSize="13" FontAttributes="Bold" TextColor="White" />
+                                    <Label Grid.Row="2" Text="Clean daylight theme" Margin="12,2,12,0" FontSize="11" TextColor="#94A3B8" />
+                                    <Label x:Name="LightCheck" Text="Tap to apply" Grid.Row="3"
+                                           Margin="12,10,12,12" FontSize="11" TextColor="White" HorizontalTextAlignment="Start" VerticalOptions="End" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="LightBadge" IsVisible="False" BackgroundColor="#FC5200" StrokeThickness="0"
+                                    AbsoluteLayout.LayoutBounds="90,10,20,20" AbsoluteLayout.LayoutFlags="None" ZIndex="2">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label Text="✓" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </AbsoluteLayout>
+
+                    </HorizontalStackLayout>
+                </ScrollView>
+            </Grid>
+            </Border>
+        </Grid>
+
     </Grid>
 </ContentPage>

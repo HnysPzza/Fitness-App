@@ -3,100 +3,151 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.UnitsSelectionPage"
              Title="Units"
-             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}">
+             BackgroundColor="#0B0F19">
 
     <ContentPage.Resources>
         <Style x:Key="SectionHeaderStyle" TargetType="Label">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="TextColor" Value="#9E9E9E" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextColor" Value="#64748B" />
             <Setter Property="FontAttributes" Value="Bold" />
-            <Setter Property="Padding" Value="16,20,16,8" />
+            <Setter Property="Padding" Value="0,0,0,8" />
+            <Setter Property="CharacterSpacing" Value="1.2" />
             <Setter Property="TextTransform" Value="Uppercase" />
         </Style>
         <Style x:Key="RowGridStyle" TargetType="Grid">
-            <Setter Property="HeightRequest" Value="56" />
-            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="MinimumHeightRequest" Value="70" />
+            <Setter Property="Padding" Value="18,14" />
         </Style>
         <Style x:Key="RowLabelStyle" TargetType="Label">
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+            <Setter Property="TextColor" Value="#F8FAFC" />
+            <Setter Property="FontAttributes" Value="Bold" />
             <Setter Property="VerticalOptions" Value="Center" />
         </Style>
         <Style x:Key="DividerStyle" TargetType="BoxView">
-            <Setter Property="HeightRequest" Value="0.5" />
-            <Setter Property="Color" Value="#E0E0E0" />
-            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="HeightRequest" Value="1" />
+            <Setter Property="Color" Value="#162033" />
+            <Setter Property="Margin" Value="18,0,18,0" />
         </Style>
     </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout Padding="0,0,0,40">
+        <VerticalStackLayout Padding="16,18,16,40" Spacing="16">
+
+            <Border Padding="18"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Units"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="#F8FAFC" />
+                    <Label Text="Choose how distances, weight, and elevation are shown across the app."
+                           FontSize="13"
+                           TextColor="#94A3B8" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- Distance -->
             <Label Text="Distance" Style="{StaticResource SectionHeaderStyle}" />
-            <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+
+            <Border Padding="0"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnDistanceSelected" CommandParameter="Kilometers (km)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Kilometers (km)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="KmCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
-                <Label x:Name="KmUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="KmCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                    <Label x:Name="KmUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                </Grid>
             </Grid>
             <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnDistanceSelected" CommandParameter="Miles (mi)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Miles (mi)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="MiCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
-                <Label x:Name="MiUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="MiCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                    <Label x:Name="MiUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                </Grid>
             </Grid>
-            <BoxView Style="{StaticResource DividerStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- Weight -->
             <Label Text="Weight" Style="{StaticResource SectionHeaderStyle}" />
-            <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+
+            <Border Padding="0"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnWeightSelected" CommandParameter="Kilograms (kg)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Kilograms (kg)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="KgCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
-                <Label x:Name="KgUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="KgCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                    <Label x:Name="KgUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                </Grid>
             </Grid>
             <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnWeightSelected" CommandParameter="Pounds (lbs)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Pounds (lbs)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="LbsCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
-                <Label x:Name="LbsUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="LbsCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                    <Label x:Name="LbsUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                </Grid>
             </Grid>
-            <BoxView Style="{StaticResource DividerStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
             <!-- Elevation -->
             <Label Text="Elevation" Style="{StaticResource SectionHeaderStyle}" />
-            <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+
+            <Border Padding="0"
+                    BackgroundColor="#111827"
+                    Stroke="#243041"
+                    StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnElevationSelected" CommandParameter="Meters (m)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Meters (m)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="MCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
-                <Label x:Name="MUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="MCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                    <Label x:Name="MUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                </Grid>
             </Grid>
             <BoxView Style="{StaticResource DividerStyle}" />
-            <Grid Style="{StaticResource RowGridStyle}">
+            <Grid Style="{StaticResource RowGridStyle}" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnElevationSelected" CommandParameter="Feet (ft)" />
                 </Grid.GestureRecognizers>
                 <Label Text="Feet (ft)" Style="{StaticResource RowLabelStyle}" />
-                <Label x:Name="FtCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="End" VerticalOptions="Center" IsVisible="False" />
-                <Label x:Name="FtUncheck" Text="○" FontSize="20" TextColor="#BDBDBD" HorizontalOptions="End" VerticalOptions="Center" IsVisible="True" />
+                <Grid Grid.Column="1" WidthRequest="24" HeightRequest="24" VerticalOptions="Center">
+                    <Label x:Name="FtCheck" Text="●" FontSize="20" TextColor="#FC5200" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="False" />
+                    <Label x:Name="FtUncheck" Text="○" FontSize="20" TextColor="#475569" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="True" />
+                </Grid>
             </Grid>
-            <BoxView Style="{StaticResource DividerStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>
