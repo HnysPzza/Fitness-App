@@ -112,5 +112,12 @@
 		<AndroidSigningStorePass>android</AndroidSigningStorePass>
 	</PropertyGroup>
 
+	<Target Name="EnsureLocalAndroidDebugKeystore"
+	        BeforeTargets="_ResolveAndroidSigningKey"
+	        Condition="'$(TargetFramework)' == 'net10.0-android' AND '$(Configuration)' == 'Debug' AND !Exists('$(MSBuildThisFileDirectory)debug.keystore') AND Exists('$(LOCALAPPDATA)\Xamarin\Mono for Android\debug.keystore')">
+		<Copy SourceFiles="$(LOCALAPPDATA)\Xamarin\Mono for Android\debug.keystore"
+		      DestinationFiles="$(MSBuildThisFileDirectory)debug.keystore" />
+	</Target>
+
 
 </Project>
