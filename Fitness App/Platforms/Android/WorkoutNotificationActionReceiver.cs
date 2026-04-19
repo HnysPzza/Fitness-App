@@ -17,15 +17,49 @@ public sealed class WorkoutNotificationActionReceiver : BroadcastReceiver
             return;
 
         var action = intent?.Action;
+        var commandDelivered = false;
         if (action == ActionPauseResume)
-            WorkoutSessionManager.RequestCommand(WorkoutCommand.TogglePauseResume);
+            commandDelivered = WorkoutSessionManager.RequestCommand(WorkoutCommand.TogglePauseResume);
         else if (action == ActionStop)
-            WorkoutSessionManager.RequestCommand(WorkoutCommand.Stop);
+            commandDelivered = WorkoutSessionManager.RequestCommand(WorkoutCommand.Stop);
+
+        if (action == ActionStop)
+        {
+            WorkoutSessionManager.EnterFinishPending();
+            try
+            {
+                new WorkoutPersistenceService().MarkActiveSessionFinishPendingAsync().GetAwaiter().GetResult();
+            }
+            catch
+            {
+            }
+
+            context.StopService(new Intent(context, typeof(WorkoutTrackingForegroundService)));
+
+            var launchIntent = new Intent(context, typeof(MainActivity));
+            launchIntent.AddFlags(ActivityFlags.NewTask | ActivityFlags.SingleTop | ActivityFlags.ClearTop);
+            launchIntent.PutExtra(NotificationNavigationService.ExtraTargetPage, NotificationNavigationService.TargetRecordPage);
+            context.StartActivity(launchIntent);
+            return;
+        }
+
+        if (action != ActionPauseResume)
+            return;
+
+        if (!commandDelivered)
+        {
+            var snapshot = WorkoutSessionManager.GetSnapshot();
+            if (snapshot.IsActive)
+            {
+                if (snapshot.IsPaused)
+                    WorkoutSessionManager.Resume();
+                else
+                    WorkoutSessionManager.Pause();
+            }
+        }
 
         var refreshIntent = new Intent(context, typeof(WorkoutTrackingForegroundService));
-        refreshIntent.SetAction(action == ActionStop
-            ? WorkoutTrackingForegroundService.ActionStopService
-            : WorkoutTrackingForegroundService.ActionRefresh);
+        refreshIntent.SetAction(WorkoutTrackingForegroundService.ActionRefresh);
 
         if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O)
             context.StartForegroundService(refreshIntent);

@@ -10,13 +10,16 @@ namespace Fitness_App.Services;
 public class StatsService
 {
     private readonly ISupabaseService _supabase;
+    private readonly WorkoutPersistenceService _workoutPersistence;
 
-    public StatsService(ISupabaseService supabase)
+    public StatsService(ISupabaseService supabase, WorkoutPersistenceService workoutPersistence)
     {
         _supabase = supabase;
+        _workoutPersistence = workoutPersistence;
     }
 
     public string? LastSaveError { get; private set; }
+    public bool LastSaveWasPending { get; private set; }
 
     public async Task<UserStats> GetStatsInRangeAsync(DateTime fromUtc, DateTime? toUtc = null)
     {
@@ -149,7 +152,8 @@ public class StatsService
             if (_supabase.Client == null || _supabase.CurrentUser == null)
                 return 0;
 
-            var from = DateTime.UtcNow.Date.AddDays(-60).ToString("O");
+            var today = DateTime.Now.Date;
+            var from = today.AddDays(-365).ToUniversalTime().ToString("O");
             var result = await _supabase.Client
                 .From<UserActivity>()
                 .Filter("user_id", Postgrest.Constants.Operator.Equals, _supabase.CurrentUser.Id)
@@ -157,31 +161,23 @@ public class StatsService
                 .Order("created_at", Postgrest.Constants.Ordering.Descending)
                 .Get();
 
-            var activeDates = result.Models
+            var activities = result.Models.ToList();
+            var pendingActivities = await _workoutPersistence.LoadPendingActivitiesAsync();
+            activities.AddRange(pendingActivities
+                .Where(activity => string.Equals(activity.UserId, _supabase.CurrentUser.Id, StringComparison.OrdinalIgnoreCase))
+                .Select(activity => activity.ToUserActivity()));
+
+            var activeDates = activities
                 .Select(activity => activity.CreatedAt.ToLocalTime().Date)
-                .Distinct()
-                .OrderByDescending(date => date)
-                .ToList();
+                .ToHashSet();
 
-            if (activeDates.Count == 0)
-                return 0;
-
-            var today = DateTime.Now.Date;
-            var expected = activeDates[0] == today
-                ? today
-                : activeDates[0] == today.AddDays(-1)
-                    ? today.AddDays(-1)
-                    : DateTime.MinValue;
-
-            if (expected == DateTime.MinValue)
+            if (!activeDates.Contains(today))
                 return 0;
 
             var streak = 0;
-            foreach (var date in activeDates)
+            var expected = today;
+            while (activeDates.Contains(expected))
             {
-                if (date != expected)
-                    break;
-
                 streak++;
                 expected = expected.AddDays(-1);
             }
@@ -305,9 +301,11 @@ public class StatsService
 
     public async Task<UserActivity?> SaveActivityAsync(UserActivity activity)
     {
+        LastSaveError = null;
+        LastSaveWasPending = false;
+
         try
         {
-            LastSaveError = null;
             await _supabase.InitializeAsync();
 
             if (_supabase.Client == null || _supabase.CurrentUser == null)
@@ -324,10 +322,35 @@ public class StatsService
             if (activity.CreatedAt == default)
                 activity.CreatedAt = DateTime.UtcNow;
 
-            await _supabase.Client
-                .From<UserActivity>()
-                .Insert(activity);
+            var lastTransientError = string.Empty;
+            for (var attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    await _supabase.Client
+                        .From<UserActivity>()
+                        .Insert(activity);
 
+                    return activity;
+                }
+                catch (Exception ex)
+                {
+                    if (await ActivityExistsAsync(activity.Id))
+                        return activity;
+
+                    if (!IsTransientSaveException(ex))
+                        throw;
+
+                    lastTransientError = BuildErrorMessage(ex);
+                    System.Diagnostics.Debug.WriteLine($"[StatsService] SaveActivity transient attempt {attempt}: {ex.Message}");
+                    if (attempt < 3)
+                        await Task.Delay(TimeSpan.FromMilliseconds(350 * attempt));
+                }
+            }
+
+            await _workoutPersistence.AddPendingActivityAsync(activity, lastTransientError);
+            LastSaveWasPending = true;
+            LastSaveError = "Saved locally. It will sync automatically when the connection is stable.";
             return activity;
         }
         catch (Exception ex)
@@ -342,6 +365,94 @@ public class StatsService
     }
 
     // ── Chart data (grouped by day) ────────────────────────────────────────
+
+    public async Task<int> SyncPendingActivitiesAsync()
+    {
+        LastSaveWasPending = false;
+
+        var pending = await _workoutPersistence.LoadPendingActivitiesAsync();
+        if (pending.Count == 0)
+            return 0;
+
+        try
+        {
+            await _supabase.InitializeAsync();
+            if (_supabase.Client == null || _supabase.CurrentUser == null)
+                return 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StatsService] SyncPendingActivities init: {ex.Message}");
+            return 0;
+        }
+
+        var synced = 0;
+        foreach (var pendingActivity in pending)
+        {
+            var activity = pendingActivity.ToUserActivity();
+            if (string.IsNullOrWhiteSpace(activity.UserId))
+                activity.UserId = _supabase.CurrentUser!.Id;
+
+            try
+            {
+                if (await ActivityExistsAsync(activity.Id))
+                {
+                    await _workoutPersistence.RemovePendingActivityAsync(activity.Id);
+                    synced++;
+                    continue;
+                }
+
+                await _supabase.Client!
+                    .From<UserActivity>()
+                    .Insert(activity);
+
+                await _workoutPersistence.RemovePendingActivityAsync(activity.Id);
+                synced++;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StatsService] SyncPendingActivities {activity.Id}: {ex.Message}");
+            }
+        }
+
+        return synced;
+    }
+
+    private async Task<bool> ActivityExistsAsync(string activityId)
+    {
+        if (_supabase.Client == null || _supabase.CurrentUser == null || string.IsNullOrWhiteSpace(activityId))
+            return false;
+
+        try
+        {
+            var existing = await GetActivityByIdAsync(activityId);
+            return existing != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsTransientSaveException(Exception ex)
+    {
+        var message = ex.ToString();
+        return ex is HttpRequestException
+            || ex is TaskCanceledException
+            || message.Contains("connection reset", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("connection was reset", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("temporarily", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("timeout", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("timed out", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("network", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("transport", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildErrorMessage(Exception ex)
+    {
+        var inner = ex.InnerException?.Message ?? string.Empty;
+        return string.IsNullOrWhiteSpace(inner) ? ex.Message : $"{ex.Message} -> {inner}";
+    }
 
     public async Task<List<(string Label, float Value)>> GetChartDataAsync(string period)
     {
@@ -402,6 +513,10 @@ public class StatsService
         {
             TotalKm         = totalKm,
             TotalActivities = activities.Count,
+            ActiveDays      = activities
+                .Select(activity => activity.CreatedAt.ToLocalTime().Date)
+                .Distinct()
+                .Count(),
             TotalTime       = totalTime,
             AvgSpeedKmh     = avgSpeed
         };

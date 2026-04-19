@@ -21,6 +21,20 @@ public static class MapboxWebViewHtml
             .Replace("__START_LAT__", lat.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
+    public static async Task PreloadAsync()
+    {
+        try
+        {
+            await Task.WhenAll(
+                GetPreparedTemplateAsync("maps.html"),
+                GetPreparedTemplateAsync("mapbox_map.html")).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapboxWebViewHtml] Preload skipped: {ex.Message}");
+        }
+    }
+
     private static Task<string> GetPreparedTemplateAsync(string assetFileName) =>
         TemplateCache.GetOrAdd(assetFileName, static async fileName =>
         {

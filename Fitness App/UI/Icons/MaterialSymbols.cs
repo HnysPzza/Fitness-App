@@ -11,6 +11,7 @@ namespace Fitness_App.UI.Icons
         public const string FiberManualRecord = "\uE061";
         public const string Insights        = "\uF092";
         public const string Settings        = "\uE8B8";
+        public const string ArrowBack       = "\uE5C4";
         public const string Chevron_right   = "\uE5CC";
         public const string Info            = "\uE88E";
         public const string Open_in_full    = "\uF1CE";
@@ -23,17 +24,30 @@ namespace Fitness_App.UI.Icons
         public const string Directions_run  = "\uE566";
         public const string Directions_walk = "\uE536";
         public const string Route           = "\uEFDB";
-        public const string Sports_score    = "\uF0E8";
+        public const string Sports_score    = "\uEA23";
         public const string Schedule        = "\uE8B5";
         public const string Location_on     = "\uE0C8";
         public const string Play_circle     = "\uE1C4";
         public const string Play_arrow      = "\uE037";
         public const string Pause           = "\uE034";
         public const string Stop            = "\uE047";
-        public const string Pedal_bike      = "\uE52A";
+        public const string Pedal_bike      = "\uE52F";
         public const string Sprint          = "\uE9D4";
         public const string Hiking          = "\uE50A";
         public const string Pool            = "\uEB48";
+        public const string Fitness_center  = "\uEB43";
+        public const string Self_improvement = "\uEA78";
+        public const string Sports_basketball = "\uEA26";
+        public const string Sports_tennis   = "\uEA32";
+        public const string Sports_golf     = "\uEA22";
+        public const string Sports_mma      = "\uEA2C";
+        public const string Ice_skating     = "\uE50B";
+        public const string Skateboarding   = "\uE511";
+        public const string Surfing         = "\uE515";
+        public const string Kayaking        = "\uE50C";
+        public const string Downhill_skiing = "\uE509";
+        public const string Snowboarding    = "\uE513";
+        public const string Rowing          = "\uE921";
 
         // GPS / Signal
         public const string Signal_cellular_alt = "\uE202";

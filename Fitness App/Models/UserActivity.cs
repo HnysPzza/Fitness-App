@@ -49,8 +49,10 @@ public class UserActivity : BaseModel
     public string CoordinatesJson { get; set; } = string.Empty;
 
     [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public ActivityRouteData RouteData => ActivityRouteCodec.Parse(CoordinatesJson);
 
     [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public IReadOnlyList<ActivityRoutePoint> RoutePoints => RouteData.Points;
 }

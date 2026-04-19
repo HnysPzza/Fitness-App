@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Fitness_App.Models;
 using Fitness_App.Services;
@@ -47,11 +48,12 @@ public partial class RecordPage : ContentPage
     private const string ThreeDPreferenceKey = "record_three_d_enabled";
     private const uint MapStyleSheetAnimationMs = 280;
     private const uint MapStyleOverlayAnimationMs = 200;
-    private const double MapStyleSheetHiddenTranslationY = 400;
     private const int TrackingIntervalMs = 1000;
     private const double MinimumSegmentDistanceKm = 0.0015;   // 1.5 m — was 1.0 m
     private const double MinimumMovementForGpsSaveKm = 0.02;
-    private const double MaximumAcceptedAccuracyMeters = 40;  // was 65 — tighter filter
+    private const double PreferredGpsAccuracyMeters = 65;
+    private const double MaximumAcceptedAccuracyMeters = 100;
+    private const double MaximumGpsReadyAccuracyMeters = 100;
     private const int HeadingUiThrottleMs = 250;
     private const double MaxBearingDeviationDeg = 55;         // lateral drift filter
     private const double StillSpeedThresholdKmh = 0.5;        // stillness guard
@@ -60,6 +62,8 @@ public partial class RecordPage : ContentPage
     private StatsService? _statsService;
     private IActivitySaveNotifier? _activitySaveNotifier;
     private IAppNotificationService? _notificationService;
+    private WorkoutPersistenceService? _workoutPersistence;
+    private bool _mapSourceLoaded;
     private bool _mapReady;
     private double _currentLat = 10.315;
     private double _currentLng = 123.885;
@@ -71,6 +75,7 @@ public partial class RecordPage : ContentPage
     private bool _isMapStyleSheetOpen;
     private bool _isMapStyleSheetAnimating;
     private bool _isSavingActivity;
+    private bool _isPulseAnimating;
 
     // ── Sport ─────────────────────────────────────────────────────────────────
     private SportOption? _selectedSport;
@@ -96,9 +101,12 @@ public partial class RecordPage : ContentPage
     // ── Inline recording ──────────────────────────────────────────────────────
     private bool _isRecording;
     private bool _isPaused;
+    private bool _isFinishPending;
     private bool _isShowingFinish;
     private readonly Stopwatch _stopwatch = new();
+    private TimeSpan _elapsedOffset = TimeSpan.Zero;
     private System.Timers.Timer? _updateTimer;
+    private CancellationTokenSource? _gpsWarmupCts;
     private CancellationTokenSource? _trackingLoopCts;
     private Task? _trackingTask;
     private double _recordedDistance;
@@ -124,9 +132,9 @@ public partial class RecordPage : ContentPage
         _isThreeDEnabled = Preferences.Default.Get(ThreeDPreferenceKey, _isThreeDEnabled);
         MapStyleLayer.IsVisible = false;
         MapStyleLayer.InputTransparent = true;
-        MapStyleSheet.TranslationY = MapStyleSheetHiddenTranslationY;
+        MapStyleSheet.TranslationY = -16;
+        MapStyleSheet.Opacity = 0;
         MapStyleSheet.InputTransparent = true;
-        MapStyleBackdrop.Opacity = 0;
         MapStyleBackdrop.InputTransparent = true;
         UpdateRecStyleCards();
         UpdateThreeDToggle();
@@ -189,12 +197,23 @@ public partial class RecordPage : ContentPage
         "Run" or "Trail Run" or "Treadmill Run" => UI.Icons.MaterialSymbols.Directions_run,
         "Hike" or "Rock Climbing" => UI.Icons.MaterialSymbols.Hiking,
         "Cycling" or "Mountain Bike" or "Gravel Ride" or "Road Ride" or "Virtual Ride" or "Indoor Cycle" => UI.Icons.MaterialSymbols.Pedal_bike,
-        "Open Water Swim" or "Pool Swim" or "Surfing" => UI.Icons.MaterialSymbols.Pool,
+        "Open Water Swim" or "Pool Swim" => UI.Icons.MaterialSymbols.Pool,
+        "Surfing" => UI.Icons.MaterialSymbols.Surfing,
+        "Kayaking" => UI.Icons.MaterialSymbols.Kayaking,
+        "Rowing" => UI.Icons.MaterialSymbols.Rowing,
         "E-Bike Ride" => UI.Icons.MaterialSymbols.Bolt,
-        "Alpine Ski" or "Snowboarding" => UI.Icons.MaterialSymbols.Landscape,
-        "Kayaking" or "Rowing" => UI.Icons.MaterialSymbols.Route,
-        "Gym Workout" or "Yoga" or "Pilates" or "Crossfit" or "Dance" => UI.Icons.MaterialSymbols.Favorite,
-        _ => UI.Icons.MaterialSymbols.Sports_score
+        "Alpine Ski" => UI.Icons.MaterialSymbols.Downhill_skiing,
+        "Snowboarding" => UI.Icons.MaterialSymbols.Snowboarding,
+        "Ice Skating" => UI.Icons.MaterialSymbols.Ice_skating,
+        "Gym Workout" or "Crossfit" => UI.Icons.MaterialSymbols.Fitness_center,
+        "Yoga" or "Pilates" => UI.Icons.MaterialSymbols.Self_improvement,
+        "Boxing" => UI.Icons.MaterialSymbols.Sports_mma,
+        "Badminton" or "Tennis" => UI.Icons.MaterialSymbols.Sports_tennis,
+        "Basketball" => UI.Icons.MaterialSymbols.Sports_basketball,
+        "Golf" => UI.Icons.MaterialSymbols.Sports_golf,
+        "Skateboarding" => UI.Icons.MaterialSymbols.Skateboarding,
+        "Dance" => UI.Icons.MaterialSymbols.Favorite,
+        _ => UI.Icons.MaterialSymbols.Directions_run
     };
 
     private void RebuildFilteredList(string query = "")
@@ -217,6 +236,14 @@ public partial class RecordPage : ContentPage
         Preferences.Default.Set("last_selected_sport", sport.Name);
         UpdateLiveMetricPresentation();
         SetGpsState(_isGpsLocked);
+
+        if (!_isRecording && _isPageVisible)
+        {
+            if (IsCurrentSportGpsDependent() && !_isGpsLocked)
+                StartGpsWarmupLoop();
+            else
+                StopGpsWarmupLoop();
+        }
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -238,7 +265,12 @@ public partial class RecordPage : ContentPage
             ApplyBottomSafeArea();
             await LoadMapAsync();
             await Task.Delay(150);
-            await StartGpsSafeAsync();
+            if (await RestoreActiveSessionAsync())
+                return;
+            if (!_isRecording && IsCurrentSportGpsDependent())
+                _isGpsLocked = false;
+            SetGpsState(_isGpsLocked);
+            StartGpsWarmupLoop();
         }
         catch (Exception ex)
         {
@@ -249,8 +281,155 @@ public partial class RecordPage : ContentPage
     protected override void OnDisappearing()
     {
         _isPageVisible = false;
+        StopGpsWarmupLoop();
         StopHeadingMonitoring();
         base.OnDisappearing();
+    }
+
+    private async Task<bool> RestoreActiveSessionAsync()
+    {
+        if (_workoutPersistence == null || _isRecording)
+            return false;
+
+        var session = await _workoutPersistence.LoadActiveSessionAsync();
+        if (session == null)
+            return false;
+
+        var sport = _allSports.FirstOrDefault(item => string.Equals(item.Name, session.Sport, StringComparison.OrdinalIgnoreCase));
+        if (sport != null)
+            SelectSportInternal(sport);
+
+        ResetRecordingMetrics();
+        _recordedDistance = session.DistanceKm;
+        _currentSpeedKmh = session.CurrentSpeedKmh;
+        _averageSpeedKmh = session.AverageSpeedKmh;
+        _maxSpeedKmh = session.MaxSpeedKmh;
+        _elevationGainM = session.ElevationGainM;
+        _lastAcceptedAltitudeM = session.LastAcceptedAltitudeM;
+        _acceptedTrackPoints.AddRange(session.TrackPoints.Select(ToRecordedTrackPoint));
+        _trackedPath.AddRange(_acceptedTrackPoints.Select(point => new[] { point.Lng, point.Lat }));
+
+        if (_acceptedTrackPoints.Count > 0)
+        {
+            var last = _acceptedTrackPoints[^1];
+            _currentLng = last.Lng;
+            _currentLat = last.Lat;
+            _previousLng = last.Lng;
+            _previousLat = last.Lat;
+        }
+
+        var storedElapsed = TimeSpan.FromTicks(Math.Max(0, session.ElapsedTicks));
+        var pausedDuration = TimeSpan.FromTicks(Math.Max(0, session.PausedDurationTicks));
+        var isFinishPending = session.State == WorkoutRecordingState.FinishPending;
+        var isPaused = isFinishPending || session.PausedAtUtc.HasValue;
+        if (!isPaused && session.StartedAtUtc != default)
+        {
+            var liveElapsed = DateTimeOffset.UtcNow - session.StartedAtUtc - pausedDuration;
+            if (liveElapsed > storedElapsed)
+                storedElapsed = liveElapsed;
+        }
+
+        _elapsedOffset = storedElapsed < TimeSpan.Zero ? TimeSpan.Zero : storedElapsed;
+        _stopwatch.Reset();
+        _isRecording = true;
+        _isFinishPending = isFinishPending;
+        _isPaused = isPaused;
+        _isGpsLocked = !session.IsGpsDependent || _acceptedTrackPoints.Count > 0;
+
+        var managerStartedAt = _isPaused
+            ? DateTimeOffset.UtcNow - _elapsedOffset
+            : session.StartedAtUtc;
+
+        WorkoutSessionManager.Restore(
+            session.Sport,
+            session.IsGpsDependent,
+            managerStartedAt,
+            pausedDuration,
+            _isPaused,
+            _isFinishPending,
+            _recordedDistance,
+            _maxSpeedKmh);
+
+        await RestoreRouteOnMapAsync();
+        RestoreRecordingControls(session.IsGpsDependent);
+        UpdateLiveStatsUI();
+        SetGpsState(_isGpsLocked);
+
+        if (_isFinishPending)
+        {
+            StopAndroidWorkoutService();
+            ShowFinishSheet();
+            return true;
+        }
+
+        if (!_isPaused)
+        {
+            _stopwatch.Restart();
+            StartRecordingTimers();
+            if (session.IsGpsDependent)
+                StartTrackingLoop();
+            StartAndroidWorkoutService();
+        }
+
+        return true;
+    }
+
+    private static RecordedTrackPoint ToRecordedTrackPoint(StoredWorkoutTrackPoint point) => new()
+    {
+        Lng = point.Lng,
+        Lat = point.Lat,
+        TimestampUtc = point.TimestampUtc,
+        AccuracyMeters = point.AccuracyMeters,
+        AltitudeMeters = point.AltitudeMeters,
+        SpeedKmh = point.SpeedKmh
+    };
+
+    private StoredWorkoutTrackPoint ToStoredTrackPoint(RecordedTrackPoint point) => new()
+    {
+        Lng = point.Lng,
+        Lat = point.Lat,
+        TimestampUtc = point.TimestampUtc,
+        AccuracyMeters = point.AccuracyMeters,
+        AltitudeMeters = point.AltitudeMeters,
+        SpeedKmh = point.SpeedKmh
+    };
+
+    private async Task RestoreRouteOnMapAsync()
+    {
+        await RunMapScriptAsync("resetTracking();");
+        if (_trackedPath.Count == 0)
+            return;
+
+        var json = JsonSerializer.Serialize(_trackedPath);
+        var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        await RunMapScriptAsync($"addCoordinatesBatchFromBase64('{b64}');");
+        await SyncUserLocationAsync(followCamera: true);
+    }
+
+    private async Task PersistActiveSessionAsync(WorkoutRecordingState state)
+    {
+        if (_workoutPersistence == null || !_isRecording)
+            return;
+
+        var session = new ActiveWorkoutSession
+        {
+            Sport = _selectedSport?.Name ?? "Activity",
+            IsGpsDependent = IsCurrentSportGpsDependent(),
+            State = state,
+            StartedAtUtc = DateTimeOffset.UtcNow - CurrentRecordingElapsed,
+            PausedAtUtc = state == WorkoutRecordingState.FinishPending || _isPaused ? DateTimeOffset.UtcNow : null,
+            PausedDurationTicks = 0,
+            ElapsedTicks = CurrentRecordingElapsed.Ticks,
+            DistanceKm = _recordedDistance,
+            CurrentSpeedKmh = _currentSpeedKmh,
+            AverageSpeedKmh = _averageSpeedKmh,
+            MaxSpeedKmh = _maxSpeedKmh,
+            ElevationGainM = _elevationGainM,
+            LastAcceptedAltitudeM = _lastAcceptedAltitudeM,
+            TrackPoints = _acceptedTrackPoints.Select(ToStoredTrackPoint).ToList()
+        };
+
+        await _workoutPersistence.SaveActiveSessionAsync(session);
     }
 
     private void ResolveServices()
@@ -262,6 +441,7 @@ public partial class RecordPage : ContentPage
         _statsService ??= services.GetService<StatsService>();
         _activitySaveNotifier ??= services.GetService<IActivitySaveNotifier>();
         _notificationService ??= services.GetService<IAppNotificationService>();
+        _workoutPersistence ??= services.GetService<WorkoutPersistenceService>();
     }
 
     private void ApplyPlannedSportSelection()
@@ -374,6 +554,9 @@ public partial class RecordPage : ContentPage
     // ── Map ───────────────────────────────────────────────────────────────────
     private async Task LoadMapAsync()
     {
+        if (_mapSourceLoaded)
+            return;
+
         try
         {
             _currentLat = Preferences.Default.Get("last_lat", _currentLat);
@@ -387,8 +570,13 @@ public partial class RecordPage : ContentPage
             {
                 MapWebView.Source = new HtmlWebViewSource { Html = html, BaseUrl = "https://api.mapbox.com/" };
             });
+            _mapSourceLoaded = true;
         }
-        catch (Exception ex) { Debug.WriteLine($"[RecordPage.LoadMapAsync] {ex.Message}"); }
+        catch (Exception ex)
+        {
+            _mapSourceLoaded = false;
+            Debug.WriteLine($"[RecordPage.LoadMapAsync] {ex.Message}");
+        }
     }
 
     private async void OnMapWebViewNavigating(object? sender, WebNavigatingEventArgs e)
@@ -474,9 +662,59 @@ public partial class RecordPage : ContentPage
     }
 
     // ── GPS ───────────────────────────────────────────────────────────────────
+    private void StartGpsWarmupLoop()
+    {
+        StopGpsWarmupLoop();
+        _gpsWarmupCts = new CancellationTokenSource();
+        _ = RefreshGpsUntilReadyAsync(_gpsWarmupCts.Token);
+    }
+
+    private void StopGpsWarmupLoop()
+    {
+        _gpsWarmupCts?.Cancel();
+        _gpsWarmupCts?.Dispose();
+        _gpsWarmupCts = null;
+    }
+
+    private async Task RefreshGpsUntilReadyAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested
+            && _isPageVisible
+            && !_isRecording
+            && IsCurrentSportGpsDependent()
+            && !_isGpsLocked)
+        {
+            try
+            {
+                await StartGpsSafeAsync();
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[GPS Warmup] {ex.Message}");
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     private async Task StartGpsSafeAsync()
     {
-        MainThread.BeginInvokeOnMainThread(() => SetGpsState(false));
+        if (!_isGpsLocked)
+            MainThread.BeginInvokeOnMainThread(() => SetGpsState(false));
         try
         {
             var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
@@ -509,7 +747,22 @@ public partial class RecordPage : ContentPage
                 await SyncUserLocationAsync(followCamera: true);
             }
 
-            MainThread.BeginInvokeOnMainThread(() => SetGpsState(location != null));
+            var accuracyMeters = location?.Accuracy ?? MaximumGpsReadyAccuracyMeters;
+            var hasUsableFix = location != null && accuracyMeters <= MaximumGpsReadyAccuracyMeters;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                SetGpsState(hasUsableFix);
+                if (location != null && !hasUsableFix)
+                {
+                    GpsStatusLabel.Text = $"Improving GPS ({accuracyMeters:F0}m)";
+                    GpsStatusLabel.TextColor = Color.FromArgb("#FF9800");
+                }
+                else if (location != null && accuracyMeters > PreferredGpsAccuracyMeters)
+                {
+                    GpsStatusLabel.Text = $"GPS Ready ({accuracyMeters:F0}m)";
+                    GpsStatusLabel.TextColor = Color.FromArgb("#4CAF50");
+                }
+            });
         }
         catch (PermissionException)
         {
@@ -530,8 +783,12 @@ public partial class RecordPage : ContentPage
         catch (Exception ex)
         {
             Debug.WriteLine($"[GPS ERROR] {ex.Message}");
-            await Task.Delay(2000);
-            MainThread.BeginInvokeOnMainThread(() => SetGpsState(true)); // allow offline testing
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                SetGpsState(false);
+                GpsStatusLabel.Text = "GPS unavailable";
+                GpsStatusLabel.TextColor = Color.FromArgb("#FF9800");
+            });
         }
     }
 
@@ -592,16 +849,15 @@ public partial class RecordPage : ContentPage
 
         try
         {
-            var hiddenOffset = GetMapStyleHiddenTranslationY();
             MapStyleLayer.IsVisible = true;
             MapStyleLayer.InputTransparent = false;
             MapStyleSheet.InputTransparent = false;
             MapStyleBackdrop.InputTransparent = false;
-            MapStyleSheet.TranslationY = hiddenOffset;
-            MapStyleBackdrop.Opacity = 0;
+            MapStyleSheet.TranslationY = -16;
+            MapStyleSheet.Opacity = 0;
 
             var slideUp = MapStyleSheet.TranslateTo(0, 0, MapStyleSheetAnimationMs, Easing.CubicOut);
-            var fadeIn = MapStyleBackdrop.FadeTo(1, MapStyleOverlayAnimationMs, Easing.CubicOut);
+            var fadeIn = MapStyleSheet.FadeTo(1, MapStyleOverlayAnimationMs, Easing.CubicOut);
             await Task.WhenAll(slideUp, fadeIn);
 
             _isMapStyleSheetOpen = true;
@@ -623,8 +879,8 @@ public partial class RecordPage : ContentPage
         {
             _isMapStyleSheetOpen = false;
 
-            var slideDown = MapStyleSheet.TranslateTo(0, GetMapStyleHiddenTranslationY(), 250, Easing.CubicIn);
-            var fadeOut = MapStyleBackdrop.FadeTo(0, MapStyleOverlayAnimationMs, Easing.CubicIn);
+            var slideDown = MapStyleSheet.TranslateTo(0, -16, 180, Easing.CubicIn);
+            var fadeOut = MapStyleSheet.FadeTo(0, MapStyleOverlayAnimationMs, Easing.CubicIn);
             await Task.WhenAll(slideDown, fadeOut);
 
             MapStyleBackdrop.InputTransparent = true;
@@ -637,9 +893,6 @@ public partial class RecordPage : ContentPage
             _isMapStyleSheetAnimating = false;
         }
     }
-
-    private double GetMapStyleHiddenTranslationY()
-        => Math.Max(MapStyleSheetHiddenTranslationY, MapStyleSheet.Height > 0 ? MapStyleSheet.Height + 40 : 0);
 
     // Individual style handlers — avoids CommandParameter parsing entirely
     private async void OnRecOutdoorsTapped(object? sender, EventArgs e)   => await ApplyRecStyleAsync("outdoors-v12");
@@ -775,27 +1028,17 @@ public partial class RecordPage : ContentPage
     private void StartInlineRecording()
     {
         var gpsDependent = IsCurrentSportGpsDependent();
+        StopGpsWarmupLoop();
         _isRecording = true;
         _isPaused = false;
+        _isFinishPending = false;
         _isShowingFinish = false;
         ResetRecordingMetrics();
+        _elapsedOffset = TimeSpan.Zero;
         _stopwatch.Restart();
 
-        RecordButtonIconLabel.Text = UI.Icons.MaterialSymbols.Stop;
-        RecordButton.BackgroundColor = Color.FromArgb("#EF4444");
-
-        AddRouteBtn.IsVisible = false;
-        PauseBtn.IsVisible = true;
-        PauseBtnLabel.IsVisible = true;
-        PauseBtnIcon.Text = UI.Icons.MaterialSymbols.Pause;
-        PauseBtn.BackgroundColor = Color.FromArgb("#F59E0B");
-        PauseBtnLabel.Text = "Pause";
-        PauseBtnLabel.TextColor = Color.FromArgb("#F59E0B");
-
-        _updateTimer = new System.Timers.Timer(TrackingIntervalMs);
-        _updateTimer.Elapsed += OnTimerTick;
-        _updateTimer.AutoReset = true;
-        _updateTimer.Start();
+        RestoreRecordingControls(gpsDependent);
+        StartRecordingTimers();
 
         WorkoutSessionManager.CommandRequested -= OnWorkoutCommandRequested;
         WorkoutSessionManager.CommandRequested += OnWorkoutCommandRequested;
@@ -803,17 +1046,10 @@ public partial class RecordPage : ContentPage
         WorkoutSessionManager.UpdateMetrics(_selectedSport?.Name ?? "Activity", gpsDependent, _recordedDistance, _maxSpeedKmh);
         StartAndroidWorkoutService();
 
-        _trackingLoopCts?.Cancel();
-        _trackingLoopCts?.Dispose();
-        _trackingLoopCts = null;
-        _trackingTask = null;
-
         if (gpsDependent)
         {
-            _trackingLoopCts = new CancellationTokenSource();
-            _trackingTask = TrackLocationAsync(_trackingLoopCts.Token);
+            StartTrackingLoop();
             _ = RunMapScriptAsync("startTracking();");
-            SeedInitialTrackPoint();
         }
         else
         {
@@ -821,8 +1057,76 @@ public partial class RecordPage : ContentPage
             UpdateSpeedMetrics(0);
         }
 
+        _ = PersistActiveSessionAsync(WorkoutRecordingState.Recording);
         UpdateLiveStatsUI();
         SetGpsState(_isGpsLocked);
+    }
+
+    private void StartPulseAnimation()
+    {
+        if (_isPulseAnimating) return;
+        _isPulseAnimating = true;
+        _ = PulseLoopAsync();
+    }
+    
+    private void StopPulseAnimation()
+    {
+        _isPulseAnimating = false;
+        RecordPulseRing.Opacity = 0;
+        RecordPulseRing.Scale = 1.0;
+    }
+
+    private async Task PulseLoopAsync()
+    {
+        while (_isPulseAnimating)
+        {
+            RecordPulseRing.Opacity = 1;
+            RecordPulseRing.Scale = 1.0;
+            var scaleTask = RecordPulseRing.ScaleTo(1.4, 1500, Easing.CubicOut);
+            var fadeTask = RecordPulseRing.FadeTo(0, 1500, Easing.CubicOut);
+            await Task.WhenAll(scaleTask, fadeTask);
+            if (_isPulseAnimating)
+                await Task.Delay(400); // Wait before next pulse
+        }
+        RecordPulseRing.Opacity = 0;
+        RecordPulseRing.Scale = 1.0;
+    }
+
+    private void RestoreRecordingControls(bool gpsDependent)
+    {
+        SportSelectorBtn.IsVisible = false;
+        FinishBtn.IsVisible = true;
+
+        RecordButtonIconLabel.Text = UI.Icons.MaterialSymbols.Stop;
+        RecordButton.BackgroundColor = Color.FromArgb("#EF4444");
+        
+        PauseBtn.IsVisible = true;
+        PauseBtnLabel.IsVisible = true;
+        
+        UpdatePauseBtnVisuals();
+        
+        if (!_isPaused)
+            StartPulseAnimation();
+        else
+            StopPulseAnimation();
+    }
+
+    private void StartRecordingTimers()
+    {
+        _updateTimer?.Stop();
+        _updateTimer?.Dispose();
+        _updateTimer = new System.Timers.Timer(TrackingIntervalMs);
+        _updateTimer.Elapsed += OnTimerTick;
+        _updateTimer.AutoReset = true;
+        _updateTimer.Start();
+    }
+
+    private void StartTrackingLoop()
+    {
+        _trackingLoopCts?.Cancel();
+        _trackingLoopCts?.Dispose();
+        _trackingLoopCts = new CancellationTokenSource();
+        _trackingTask = TrackLocationAsync(_trackingLoopCts.Token);
     }
 
     private void OnTimerTick(object? sender, System.Timers.ElapsedEventArgs e)
@@ -831,11 +1135,30 @@ public partial class RecordPage : ContentPage
             return;
 
         WorkoutSessionManager.UpdateMetrics(_selectedSport?.Name ?? "Activity", IsCurrentSportGpsDependent(), _recordedDistance, _maxSpeedKmh);
+        _ = PersistActiveSessionAsync(WorkoutRecordingState.Recording);
         MainThread.BeginInvokeOnMainThread(UpdateLiveStatsUI);
+    }
+
+    private TimeSpan CurrentRecordingElapsed => _elapsedOffset + _stopwatch.Elapsed;
+
+    private void PauseRecordingClock()
+    {
+        if (!_stopwatch.IsRunning)
+            return;
+
+        _elapsedOffset += _stopwatch.Elapsed;
+        _stopwatch.Reset();
+    }
+
+    private void ResumeRecordingClock()
+    {
+        _stopwatch.Restart();
     }
 
     private async Task TrackLocationAsync(CancellationToken cancellationToken)
     {
+        await CaptureTrackingLocationAsync(cancellationToken);
+
         while (_isRecording && !cancellationToken.IsCancellationRequested)
         {
             try
@@ -844,31 +1167,7 @@ public partial class RecordPage : ContentPage
                 if (!_isRecording || _isPaused || !IsCurrentSportGpsDependent())
                     continue;
 
-                var loc = await Geolocation.GetLocationAsync(new GeolocationRequest
-                {
-                    DesiredAccuracy = GeolocationAccuracy.Best,
-                    Timeout = TimeSpan.FromSeconds(TrackingIntervalMs <= 1000 ? 2 : 3)
-                });
-                if (loc == null)
-                    continue;
-
-                _currentLat = loc.Latitude;
-                _currentLng = loc.Longitude;
-                Preferences.Default.Set("last_lat", _currentLat);
-                Preferences.Default.Set("last_lng", _currentLng);
-                UpdateHeadingFromLocation(loc);
-                await SyncUserLocationAsync(followCamera: true);
-
-                if (TryAcceptLocation(loc, out var acceptedPoint))
-                {
-                    await AddAcceptedPointToMapAsync(acceptedPoint!);
-                }
-                else
-                {
-                    UpdateSpeedMetrics(0);
-                }
-
-                MainThread.BeginInvokeOnMainThread(UpdateLiveStatsUI);
+                await CaptureTrackingLocationAsync(cancellationToken);
             }
             catch (TaskCanceledException)
             {
@@ -881,6 +1180,43 @@ public partial class RecordPage : ContentPage
         }
     }
 
+    private async Task CaptureTrackingLocationAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!_isRecording || _isPaused || !IsCurrentSportGpsDependent() || cancellationToken.IsCancellationRequested)
+                return;
+
+            var loc = await Geolocation.GetLocationAsync(new GeolocationRequest
+            {
+                DesiredAccuracy = GeolocationAccuracy.Best,
+                Timeout = TimeSpan.FromSeconds(6)
+            });
+            if (loc == null)
+                return;
+
+            if (TryAcceptLocation(loc, out var acceptedPoint))
+            {
+                Preferences.Default.Set("last_lat", _currentLat);
+                Preferences.Default.Set("last_lng", _currentLng);
+                UpdateHeadingFromLocation(loc);
+                await SyncUserLocationAsync(followCamera: true);
+                await AddAcceptedPointToMapAsync(acceptedPoint!);
+                await PersistActiveSessionAsync(WorkoutRecordingState.Recording);
+            }
+            else
+            {
+                UpdateSpeedMetrics(0);
+            }
+
+            MainThread.BeginInvokeOnMainThread(UpdateLiveStatsUI);
+        }
+        catch (Exception ex) when (ex is not TaskCanceledException)
+        {
+            Debug.WriteLine($"[TrackLocation] {ex.Message}");
+        }
+    }
+
     private void ResetRecordingMetrics()
     {
         _recordedDistance = 0.0;
@@ -889,6 +1225,7 @@ public partial class RecordPage : ContentPage
         _trackedPath.Clear();
         _acceptedTrackPoints.Clear();
         _recentSpeedSamplesKmh.Clear();
+        _elapsedOffset = TimeSpan.Zero;
         _currentSpeedKmh = 0;
         _smoothedSpeedKmh = 0;
         _averageSpeedKmh = 0;
@@ -897,38 +1234,24 @@ public partial class RecordPage : ContentPage
         _lastAcceptedAltitudeM = null;
     }
 
-    private void SeedInitialTrackPoint()
-    {
-        if (!IsCurrentSportGpsDependent() || !_isGpsLocked)
-            return;
-
-        var seedPoint = new RecordedTrackPoint
-        {
-            Lng = _currentLng,
-            Lat = _currentLat,
-            TimestampUtc = DateTimeOffset.UtcNow,
-            SpeedKmh = 0
-        };
-
-        _acceptedTrackPoints.Add(seedPoint);
-        _trackedPath.Add(new[] { seedPoint.Lng, seedPoint.Lat });
-        _previousLat = seedPoint.Lat;
-        _previousLng = seedPoint.Lng;
-        _ = AddAcceptedPointToMapAsync(seedPoint);
-    }
-
     private bool TryAcceptLocation(Location location, out RecordedTrackPoint? acceptedPoint)
     {
         acceptedPoint = null;
 
         var accuracyMeters = location.Accuracy ?? MaximumAcceptedAccuracyMeters;
+        var timestamp = location.Timestamp == default ? DateTimeOffset.UtcNow : location.Timestamp;
+        if (DateTimeOffset.UtcNow - timestamp > TimeSpan.FromSeconds(10))
+        {
+            Debug.WriteLine($"[TrackLocation] rejected stale point: age={(DateTimeOffset.UtcNow - timestamp).TotalSeconds:F1}s");
+            return false;
+        }
+
         if (accuracyMeters > MaximumAcceptedAccuracyMeters)
         {
             Debug.WriteLine($"[TrackLocation] rejected point due to low accuracy: {accuracyMeters:F1}m");
             return false;
         }
 
-        var timestamp = location.Timestamp == default ? DateTimeOffset.UtcNow : location.Timestamp;
         if (_acceptedTrackPoints.Count == 0)
         {
             acceptedPoint = CreateTrackPoint(location, timestamp, 0);
@@ -1063,8 +1386,8 @@ public partial class RecordPage : ContentPage
         _trackedPath.Add(new[] { point.Lng, point.Lat });
 
         UpdateSpeedMetrics(point.SpeedKmh ?? 0);
-        _averageSpeedKmh = _stopwatch.Elapsed.TotalHours > 0.0001
-            ? _recordedDistance / _stopwatch.Elapsed.TotalHours
+        _averageSpeedKmh = CurrentRecordingElapsed.TotalHours > 0.0001
+            ? _recordedDistance / CurrentRecordingElapsed.TotalHours
             : 0;
         WorkoutSessionManager.UpdateMetrics(_selectedSport?.Name ?? "Activity", IsCurrentSportGpsDependent(), _recordedDistance, _maxSpeedKmh);
     }
@@ -1102,7 +1425,7 @@ public partial class RecordPage : ContentPage
 
     private void UpdateLiveStatsUI()
     {
-        var elapsed = _stopwatch.Elapsed;
+        var elapsed = CurrentRecordingElapsed;
         LiveTimeLabel.Text = elapsed.Hours > 0
             ? $"{elapsed.Hours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}"
             : $"{elapsed.Minutes:00}:{elapsed.Seconds:00}";
@@ -1123,7 +1446,7 @@ public partial class RecordPage : ContentPage
 
     private void StopRecordingTimers()
     {
-        _stopwatch.Stop();
+        PauseRecordingClock();
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
         _updateTimer = null;
@@ -1145,22 +1468,37 @@ public partial class RecordPage : ContentPage
         _isPaused = !_isPaused;
         if (_isPaused)
         {
-            _stopwatch.Stop();
+            PauseRecordingClock();
             WorkoutSessionManager.Pause();
-            PauseBtnIcon.Text = UI.Icons.MaterialSymbols.Play_arrow;
-            PauseBtn.BackgroundColor = Color.FromArgb("#10B981");
-            PauseBtnLabel.Text = "Resume";
-            PauseBtnLabel.TextColor = Color.FromArgb("#10B981");
+            UpdatePauseBtnVisuals();
+            StopPulseAnimation();
+
+
+
         }
         else
         {
-            _stopwatch.Start();
+            ResumeRecordingClock();
+            _isFinishPending = false;
             WorkoutSessionManager.Resume();
-            PauseBtnIcon.Text = UI.Icons.MaterialSymbols.Pause;
-            PauseBtn.BackgroundColor = Color.FromArgb("#F59E0B");
-            PauseBtnLabel.Text = "Pause";
-            PauseBtnLabel.TextColor = Color.FromArgb("#F59E0B");
+            UpdatePauseBtnVisuals();
+            StartPulseAnimation();
+
+
+
         }
+
+        _ = PersistActiveSessionAsync(_isFinishPending ? WorkoutRecordingState.FinishPending : WorkoutRecordingState.Recording);
+    }
+
+    private void UpdatePauseBtnVisuals()
+    {
+        PauseBtnIcon.Text = _isPaused ? UI.Icons.MaterialSymbols.Play_arrow : UI.Icons.MaterialSymbols.Pause;
+        PauseBtnFace.BackgroundColor = _isPaused ? Color.FromArgb("#064E3B") : Color.FromArgb("#1A1200");
+        PauseBtnFace.Stroke = _isPaused ? Color.FromArgb("#10B981") : Color.FromArgb("#F59E0B");
+        PauseBtnIcon.TextColor = _isPaused ? Color.FromArgb("#10B981") : Color.FromArgb("#FBBF24");
+        PauseBtnLabel.Text = _isPaused ? "Resume" : "Pause";
+        PauseBtnLabel.TextColor = _isPaused ? Color.FromArgb("#10B981") : Color.FromArgb("#F59E0B");
     }
 
     private void OnWorkoutCommandRequested(object? sender, WorkoutCommand command)
@@ -1178,7 +1516,7 @@ public partial class RecordPage : ContentPage
 
             if (!_isPageVisible)
             {
-                await SaveActivityAsync(showSavedSheet: false);
+                await EnterFinishPendingAsync();
                 return;
             }
 
@@ -1187,20 +1525,34 @@ public partial class RecordPage : ContentPage
     }
 
     // ── Finish / Save sheets ──────────────────────────────────────────────────
-    private void ShowFinishSheet()
+    private async void ShowFinishSheet()
     {
         if (_isShowingFinish) return;
+        await EnterFinishPendingAsync();
         _isShowingFinish = true;
-        var el = _stopwatch.Elapsed;
+        var el = CurrentRecordingElapsed;
         FinishTimeLabel.Text = $"{el.Hours:00}:{el.Minutes:00}:{el.Seconds:00}";
         FinishDistanceLabel.Text = $"{_recordedDistance:F2}";
-        if (_acceptedTrackPoints.Count > 0)
-            _ = RunMapScriptAsync($"stopTracking({Inv(_currentLng)}, {Inv(_currentLat)});");
         FinishBackdrop.InputTransparent = false;
         FinishBackdrop.IsVisible = true;
         FinishConfirmSheet.TranslationY = 600;
         FinishConfirmSheet.IsVisible = true;
-        FinishConfirmSheet.TranslateTo(0, 0, 280, Easing.CubicOut);
+        await FinishConfirmSheet.TranslateTo(0, 0, 280, Easing.CubicOut);
+    }
+
+    private async Task EnterFinishPendingAsync()
+    {
+        if (!_isRecording)
+            return;
+
+        _isFinishPending = true;
+        _isPaused = true;
+        StopPulseAnimation();
+        StopRecordingTimers();
+        WorkoutSessionManager.EnterFinishPending();
+        StopAndroidWorkoutService();
+        await PersistActiveSessionAsync(WorkoutRecordingState.FinishPending);
+        UpdateLiveStatsUI();
     }
 
     private async Task HideFinishSheet()
@@ -1212,11 +1564,29 @@ public partial class RecordPage : ContentPage
         _isShowingFinish = false;
     }
 
-    private async void OnFinishBackdropTapped(object sender, TappedEventArgs e) => await HideFinishSheet();
-    private async void OnKeepRecordingClicked(object sender, EventArgs e) => await HideFinishSheet();
+    private void OnFinishBackdropTapped(object sender, TappedEventArgs e) { }
+    private async void OnKeepRecordingClicked(object sender, EventArgs e) => await KeepRecordingAsync();
+
+    private async Task KeepRecordingAsync()
+    {
+        await HideFinishSheet();
+        _isFinishPending = false;
+        _isPaused = false;
+        ResumeRecordingClock();
+        RestoreRecordingControls(IsCurrentSportGpsDependent());
+        StartRecordingTimers();
+        if (IsCurrentSportGpsDependent())
+            StartTrackingLoop();
+        WorkoutSessionManager.Resume();
+        StartAndroidWorkoutService();
+        await PersistActiveSessionAsync(WorkoutRecordingState.Recording);
+    }
 
     private async void OnSaveActivityClicked(object sender, EventArgs e)
         => await SaveActivityAsync(showSavedSheet: true);
+
+    private async void OnDiscardActivityClicked(object sender, EventArgs e)
+        => await DiscardActivityAsync();
 
     private async Task SaveActivityAsync(bool showSavedSheet)
     {
@@ -1263,10 +1633,12 @@ public partial class RecordPage : ContentPage
             _isSavingActivity = false;
         }
 
+        var savedPending = _statsService?.LastSaveWasPending == true;
         CompleteRecordingAfterSave();
 
-        _activitySaveNotifier?.NotifyActivitySaved();
-        if (_notificationService != null)
+        if (!savedPending)
+            _activitySaveNotifier?.NotifyActivitySaved();
+        if (!savedPending && _notificationService != null)
             await _notificationService.ShowRecordingCompletedAsync(savedActivity);
 
         PlannedSport = string.Empty;
@@ -1283,21 +1655,52 @@ public partial class RecordPage : ContentPage
         SavedDistanceLabel.Text = gpsDependent ? $"{_recordedDistance:F2} km" : "Manual session";
         await HideFinishSheet();
         await Task.Delay(300);
-        ShowSavedSheet();
+        if (savedPending)
+        {
+            await DisplayAlert("Saved locally", _statsService?.LastSaveError ?? "This activity will sync automatically when the connection is stable.", "OK");
+            ResetRecordingUI();
+        }
+        else
+        {
+            ShowSavedSheet();
+        }
+    }
+
+    private async Task DiscardActivityAsync()
+    {
+        if (!_isRecording)
+            return;
+
+        await HideFinishSheet();
+        StopRecordingTimers();
+        _isRecording = false;
+        _isPaused = false;
+        _isFinishPending = false;
+        WorkoutSessionManager.Stop();
+        WorkoutSessionManager.CommandRequested -= OnWorkoutCommandRequested;
+        StopAndroidWorkoutService();
+        if (_workoutPersistence != null)
+            await _workoutPersistence.ClearActiveSessionAsync();
+        ResetRecordingUI();
     }
 
     private void CompleteRecordingAfterSave()
     {
+        if (_acceptedTrackPoints.Count > 0)
+            _ = RunMapScriptAsync($"stopTracking({Inv(_currentLng)}, {Inv(_currentLat)});");
         StopRecordingTimers();
         _isRecording = false;
+        _isPaused = false;
+        _isFinishPending = false;
         WorkoutSessionManager.Stop();
         WorkoutSessionManager.CommandRequested -= OnWorkoutCommandRequested;
         StopAndroidWorkoutService();
+        _ = _workoutPersistence?.ClearActiveSessionAsync();
     }
 
     private UserActivity BuildCompletedActivity()
     {
-        var duration = _stopwatch.Elapsed;
+        var duration = CurrentRecordingElapsed;
         return new UserActivity
         {
             Sport = _selectedSport?.Name ?? "Activity",
@@ -1335,9 +1738,15 @@ public partial class RecordPage : ContentPage
 
     private void ResetRecordingUI()
     {
+        _isRecording = false;
+        _isPaused = false;
+        _isFinishPending = false;
+        StopPulseAnimation();
+        
+        if (SportSelectorBtn != null) SportSelectorBtn.IsVisible = true;
+        if (FinishBtn != null) FinishBtn.IsVisible = false;
         ResetRecordingMetrics();
-        AddRouteBtn.IsVisible = true;
-        PauseBtn.IsVisible = false;
+        if (PauseBtn != null) PauseBtn.IsVisible = false;
         PauseBtnLabel.IsVisible = false;
         RecordButtonIconLabel.Text = UI.Icons.MaterialSymbols.Play_arrow;
         LiveTimeLabel.Text = "00:00";
@@ -1396,6 +1805,6 @@ public partial class RecordPage : ContentPage
     private async void OnSettingsTapped(object sender, TappedEventArgs e)
     {
         try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-        await Shell.Current.GoToAsync("settings");
+        await Shell.Current.GoToAsync("generalsettings");
     }
 }

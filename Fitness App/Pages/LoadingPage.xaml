@@ -1,28 +1,97 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
              xmlns:skia="clr-namespace:Fitness_App.UI.Skia"
              x:Class="Fitness_App.Pages.LoadingPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
              BackgroundColor="#0B0F19">
 
-    <!-- Session gate: brand + animated runner while auth/session resolves. -->
-    <Grid VerticalOptions="Fill" HorizontalOptions="Fill">
-        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
-            <Label Text="StrideX"
-                   FontSize="42"
-                   FontAttributes="Bold"
-                   TextColor="#FC5200"
-                   HorizontalOptions="Center" />
+    <Grid Padding="28"
+          RowDefinitions="*,Auto,*"
+          VerticalOptions="Fill"
+          HorizontalOptions="Fill">
+        <VerticalStackLayout Grid.Row="1"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="24">
+            <Grid WidthRequest="128"
+                  HeightRequest="128"
+                  HorizontalOptions="Center">
+                <Ellipse x:Name="LogoOrbit"
+                         Stroke="#38FC5200"
+                         StrokeThickness="2"
+                         Fill="Transparent"
+                         WidthRequest="128"
+                         HeightRequest="128" />
+                <Ellipse x:Name="LogoGlow"
+                         Fill="#18FC5200"
+                         WidthRequest="100"
+                         HeightRequest="100"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center" />
+                <Border x:Name="LogoBadge"
+                        WidthRequest="86"
+                        HeightRequest="86"
+                        Padding="0"
+                        StrokeThickness="1"
+                        Stroke="#45FFFFFF"
+                        BackgroundColor="#FC5200"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="22" />
+                    </Border.StrokeShape>
+                    <Grid WidthRequest="58"
+                          HeightRequest="58"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+                        <shapes:Path Fill="#FFFFFF"
+                                     Aspect="Uniform"
+                                     Data="M 7 48 L 29 8 L 41 8 L 27 34 L 48 34 L 40 48 Z" />
+                        <shapes:Path Fill="#121826"
+                                     Opacity="0.24"
+                                     Aspect="Uniform"
+                                     Data="M 31 8 L 51 8 L 37 34 L 51 34 L 42 48 L 15 48 Z" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <VerticalStackLayout Spacing="7"
+                                 HorizontalOptions="Center">
+                <Label Text="StrideX"
+                       FontSize="42"
+                       FontAttributes="Bold"
+                       CharacterSpacing="1"
+                       TextColor="#FFFFFF"
+                       HorizontalOptions="Center" />
+                <Label Text="Find your stride."
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#FDBA74"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
             <skia:RunnerLoadingView HorizontalOptions="Center"
                                     AccentColor="#FC5200"
-                                    HeightRequest="160"
-                                    WidthRequest="160" />
-            <Label Text="Loading your session..."
+                                    HeightRequest="128"
+                                    WidthRequest="178" />
+
+            <VerticalStackLayout Spacing="10"
+                                 WidthRequest="220"
+                                 HorizontalOptions="Center">
+                <ProgressBar x:Name="SessionProgress"
+                             Progress="0"
+                             ProgressColor="#FC5200"
+                             BackgroundColor="#1E293B"
+                             HeightRequest="6" />
+                <Label x:Name="LoadingStatusLabel"
+                   Text="Loading your session..."
                    FontSize="14"
                    TextColor="#94A3B8"
                    HorizontalOptions="Center" />
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

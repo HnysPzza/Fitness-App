@@ -30,7 +30,7 @@
 		<MauiXamlInflator>Runtime</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>Fitness App</ApplicationTitle>
+		<ApplicationTitle>StrideX</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.fitnessapp</ApplicationId>

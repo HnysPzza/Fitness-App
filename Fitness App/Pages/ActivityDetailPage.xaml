@@ -9,16 +9,16 @@
              Shell.NavBarIsVisible="False">
 
     <Grid RowDefinitions="Auto,*,Auto">
-        <Grid Grid.Row="0" Padding="18,48,18,12" ColumnDefinitions="Auto,*,Auto">
-            <Border BackgroundColor="#111827" StrokeThickness="0" WidthRequest="42" HeightRequest="42">
+        <Grid Grid.Row="0" Padding="18,48,18,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <Border BackgroundColor="#FC5200" StrokeThickness="0" WidthRequest="48" HeightRequest="48">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="21" />
+                    <RoundRectangle CornerRadius="24" />
                 </Border.StrokeShape>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnBackTapped" />
                 </Border.GestureRecognizers>
                 <controls:IconLabel Text="{x:Static icons:MaterialSymbols.ArrowBack}"
-                                    FontSize="18"
+                                    FontSize="22"
                                     TextColor="White"
                                     HorizontalOptions="Center"
                                     VerticalOptions="Center" />
@@ -100,6 +100,27 @@
                                LineBreakMode="WordWrap"
                                TextColor="#CBD5E1" />
                     </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="#FC5200" StrokeThickness="0" Padding="18,14" HeightRequest="54">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackTapped" />
+                    </Border.GestureRecognizers>
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
+                        <controls:IconLabel Text="{x:Static icons:MaterialSymbols.ArrowBack}"
+                                            FontSize="18"
+                                            TextColor="#FFFFFF"
+                                            VerticalOptions="Center" />
+                        <Label Grid.Column="1"
+                               Text="Back to activities"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="#FFFFFF"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
                 </Border>
             </VerticalStackLayout>
         </ScrollView>

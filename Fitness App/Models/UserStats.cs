@@ -5,6 +5,7 @@ public class UserStats
 {
     public double   TotalKm         { get; set; }
     public int      TotalActivities { get; set; }
+    public int      ActiveDays      { get; set; }
     public TimeSpan TotalTime       { get; set; }
     public double   AvgSpeedKmh     { get; set; }
 
@@ -21,4 +22,5 @@ public class UserStats
     }
     public string AvgSpeedDisplay  => AvgSpeedKmh.ToString("F1");
     public string ActivitiesDisplay => TotalActivities.ToString();
+    public string ActiveDaysDisplay => ActiveDays.ToString();
 }

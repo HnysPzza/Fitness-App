@@ -37,18 +37,6 @@ namespace Fitness_App.Pages
         private int _currentStreak;
 
         [ObservableProperty]
-        private string _lastActivityTitle = "No recent activity yet";
-
-        [ObservableProperty]
-        private string _lastActivitySubtitle = "Your latest workout will appear here.";
-
-        [ObservableProperty]
-        private string _lastActivityMetric = "Start a workout to build momentum";
-
-        [ObservableProperty]
-        private bool _hasLastActivity;
-
-        [ObservableProperty]
         private string _currentPlanTitle = "No workout plan yet";
 
         [ObservableProperty]
@@ -63,13 +51,9 @@ namespace Fitness_App.Pages
         [ObservableProperty]
         private bool _hasWorkoutPlan;
 
-        public UserActivity? LastActivity { get; private set; }
-
         public WorkoutPlan? CurrentPlan { get; private set; }
 
         public ObservableCollection<SuggestedLocation> SuggestedLocations { get; }
-
-        public ObservableCollection<QuickSportAction> QuickSports { get; } = new();
 
         public ObservableCollection<PlannedWorkout> CurrentPlanWorkouts { get; } = new();
 
@@ -105,9 +89,7 @@ namespace Fitness_App.Pages
             var loadTasks = new Task[]
             {
                 LoadWeeklySummaryAsync(),
-                LoadRecentActivityAsync(),
                 LoadWorkoutPlanAsync(),
-                LoadQuickSportsAsync(),
                 LoadTemplatesAsync(),
                 LoadStreakAsync()
             };
@@ -136,8 +118,8 @@ namespace Fitness_App.Pages
                 var previousWeekTask = _statsService.GetStatsInRangeAsync(previousMonday, monday);
                 await Task.WhenAll(currentWeekTask, previousWeekTask);
 
-                var currentWeek = currentWeekTask.Result;
-                var previousWeek = previousWeekTask.Result;
+                var currentWeek = await currentWeekTask;
+                var previousWeek = await previousWeekTask;
 
                 WeekDistance = currentWeek.TotalKm.ToString("F1");
                 WeekActivities = currentWeek.TotalActivities.ToString();
@@ -162,32 +144,6 @@ namespace Fitness_App.Pages
                 WeekTime = "0h";
                 WeekDeltaText = "Keep moving this week";
                 WeekDeltaPositive = true;
-            }
-        }
-
-        private async Task LoadRecentActivityAsync()
-        {
-            try
-            {
-                LastActivity = (await _statsService.GetRecentActivitiesAsync(1)).FirstOrDefault();
-                if (LastActivity == null)
-                {
-                    HasLastActivity = false;
-                    LastActivityTitle = "No recent activity yet";
-                    LastActivitySubtitle = "Your latest workout will appear here.";
-                    LastActivityMetric = "Start a workout to build momentum";
-                    return;
-                }
-
-                HasLastActivity = true;
-                LastActivityTitle = $"{ActivityPresentation.GetSportEmoji(LastActivity.Sport)} {LastActivity.Sport}";
-                LastActivitySubtitle = LastActivity.CreatedAt.ToLocalTime().ToString("ddd, MMM d • h:mm tt");
-                LastActivityMetric = $"{LastActivity.DistanceKm:F2} km • {ActivityPresentation.FormatDuration(LastActivity.DurationTicks)}";
-            }
-            catch
-            {
-                HasLastActivity = false;
-                LastActivity = null;
             }
         }
 
@@ -227,26 +183,6 @@ namespace Fitness_App.Pages
             foreach (var template in templates)
             {
                 PlanTemplates.Add(template);
-            }
-        }
-
-        private async Task LoadQuickSportsAsync()
-        {
-            var topSports = await _statsService.GetTopSportsAsync(4);
-            if (topSports.Count == 0)
-            {
-                topSports = new List<string> { "Run", "Walk", "Cycling", "Gym Workout" };
-            }
-
-            QuickSports.Clear();
-            foreach (var sport in topSports)
-            {
-                QuickSports.Add(new QuickSportAction
-                {
-                    Sport = sport,
-                    Icon = ActivityPresentation.GetSportEmoji(sport),
-                    Subtitle = ActivityPresentation.IsPaceSport(sport) ? "Pace workout" : "Quick start"
-                });
             }
         }
 

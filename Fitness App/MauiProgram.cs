@@ -39,6 +39,8 @@ namespace Fitness_App
             builder.Services.AddSingleton<IProfileService, ProfileService>();
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
             builder.Services.AddSingleton<ISupabaseService, SupabaseService>();
+            builder.Services.AddSingleton<IAccountSessionStore, AccountSessionStore>();
+            builder.Services.AddSingleton<WorkoutPersistenceService>();
             builder.Services.AddSingleton<StatsService>();
             builder.Services.AddSingleton<IWorkoutPlanService, WorkoutPlanService>();
             builder.Services.AddSingleton<IAppNotificationService, AppNotificationService>();

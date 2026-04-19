@@ -10,7 +10,7 @@ namespace Fitness_App.Services;
 /// </summary>
 public sealed class SupabaseSessionPersistence : IGotrueSessionPersistence<Session>
 {
-    private const string StorageKey = "supabase_session";
+    public const string StorageKey = "supabase_session";
 
     public void SaveSession(Session session)
     {
@@ -22,6 +22,9 @@ public sealed class SupabaseSessionPersistence : IGotrueSessionPersistence<Sessi
         {
             var json = JsonSerializer.Serialize(session);
             Task.Run(async () => await SecureStorage.Default.SetAsync(StorageKey, json))
+                .GetAwaiter()
+                .GetResult();
+            Task.Run(async () => await AccountSessionStore.SaveSessionSnapshotAsync(session))
                 .GetAwaiter()
                 .GetResult();
         }

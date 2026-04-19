@@ -109,15 +109,10 @@ public partial class RegisterViewModel : ObservableObject
             var session = await _auth.SignUpWithEmailAsync(Email.Trim(), Password);
             System.Diagnostics.Debug.WriteLine($"[REGISTER] SignUp returned. Session null? {session == null}");
 
-            // Save the email for the verification page BEFORE navigating.
-            // Use a small delay to let the Supabase client finish its internal
-            // callbacks (state change events, session persistence) so they don't
-            // collide with Shell's fragment transaction.
             await Task.Delay(300);
 
             System.Diagnostics.Debug.WriteLine("[REGISTER] Navigating to emailverification...");
 
-            // Navigate on the main thread to avoid Android fragment crashes
             var trimmedEmail = Email.Trim();
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
@@ -129,8 +124,8 @@ public partial class RegisterViewModel : ObservableObject
         }
         catch (Supabase.Gotrue.Exceptions.GotrueException ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[REGISTER] GotrueException: {ex.Message}");
-            var msg = ex.Message;
+            var msg = FormatAuthError(ex);
+            System.Diagnostics.Debug.WriteLine($"[REGISTER] GotrueException: {msg}\n{ex}");
             if (msg.Contains("already registered", StringComparison.OrdinalIgnoreCase)
                 || msg.Contains("already been registered", StringComparison.OrdinalIgnoreCase)
                 || msg.Contains("User already registered", StringComparison.OrdinalIgnoreCase))
@@ -171,4 +166,25 @@ public partial class RegisterViewModel : ObservableObject
 
     private static bool IsValidEmail(string email) =>
         Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+
+    private static string FormatAuthError(Supabase.Gotrue.Exceptions.GotrueException ex)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(ex.Message))
+            parts.Add(ex.Message);
+
+        if (ex.StatusCode != 0)
+            parts.Add($"Status: {(int)ex.StatusCode} {ex.StatusCode}");
+
+        parts.Add($"Reason: {ex.Reason}");
+
+        if (!string.IsNullOrWhiteSpace(ex.Content))
+            parts.Add($"Response: {ex.Content}");
+
+        if (!string.IsNullOrWhiteSpace(ex.InnerException?.Message))
+            parts.Add($"Inner: {ex.InnerException.Message}");
+
+        return string.Join(Environment.NewLine, parts.Distinct());
+    }
 }

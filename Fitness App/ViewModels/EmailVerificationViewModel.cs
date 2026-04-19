@@ -110,14 +110,16 @@ public partial class EmailVerificationViewModel : ObservableObject
         }
         catch (Supabase.Gotrue.Exceptions.GotrueException ex)
         {
-            if (ex.Message.Contains("expired", StringComparison.OrdinalIgnoreCase)
-                || ex.Message.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+            var msg = FormatAuthError(ex);
+            System.Diagnostics.Debug.WriteLine($"[EMAIL VERIFY] GotrueException: {msg}\n{ex}");
+            if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("invalid", StringComparison.OrdinalIgnoreCase))
             {
                 ErrorMessage = "Invalid or expired code. Please try again.";
             }
             else
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = msg;
             }
         }
         catch (HttpRequestException)
@@ -166,5 +168,26 @@ public partial class EmailVerificationViewModel : ObservableObject
 
         ResendText = "Resend Code";
         CanResend = true;
+    }
+
+    private static string FormatAuthError(Supabase.Gotrue.Exceptions.GotrueException ex)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(ex.Message))
+            parts.Add(ex.Message);
+
+        if (ex.StatusCode != 0)
+            parts.Add($"Status: {(int)ex.StatusCode} {ex.StatusCode}");
+
+        parts.Add($"Reason: {ex.Reason}");
+
+        if (!string.IsNullOrWhiteSpace(ex.Content))
+            parts.Add($"Response: {ex.Content}");
+
+        if (!string.IsNullOrWhiteSpace(ex.InnerException?.Message))
+            parts.Add($"Inner: {ex.InnerException.Message}");
+
+        return string.Join(Environment.NewLine, parts.Distinct());
     }
 }

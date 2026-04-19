@@ -11,6 +11,7 @@ public partial class GeneralSettingsPage : ContentPage
     private readonly ISettingsService _settings;
     private readonly IAppNotificationService _notifications;
     private ISupabaseService? _supabase;
+    private bool _isLoadingSettings;
 
     public GeneralSettingsPage(ISettingsService settings, IAppNotificationService notifications)
     {
@@ -32,21 +33,32 @@ public partial class GeneralSettingsPage : ContentPage
 
     private void LoadSavedToggles()
     {
-        PushNotificationsSwitch.IsToggled = _settings.PushNotificationsEnabled;
-        WorkoutRemindersSwitch.IsToggled = _settings.WorkoutRemindersEnabled;
-        AchievementAlertsSwitch.IsToggled = _settings.AchievementAlertsEnabled;
-        WeeklySummarySwitch.IsToggled = _settings.WeeklySummaryEnabled;
-        ScreenReaderSwitch.IsToggled = _settings.ScreenReaderEnabled;
-        HighContrastSwitch.IsToggled = _settings.HighContrastEnabled;
-        ReduceMotionSwitch.IsToggled = _settings.ReduceMotionEnabled;
+        _isLoadingSettings = true;
+        try
+        {
+            PushNotificationsSwitch.IsToggled = _settings.PushNotificationsEnabled;
+            WorkoutRemindersSwitch.IsToggled = _settings.WorkoutRemindersEnabled;
+            AchievementAlertsSwitch.IsToggled = _settings.AchievementAlertsEnabled;
+            WeeklySummarySwitch.IsToggled = _settings.WeeklySummaryEnabled;
+            ScreenReaderSwitch.IsToggled = _settings.ScreenReaderEnabled;
+            HighContrastSwitch.IsToggled = _settings.HighContrastEnabled;
+            ReduceMotionSwitch.IsToggled = _settings.ReduceMotionEnabled;
 
-        UpdateNotificationSubRows(_settings.PushNotificationsEnabled);
+            UpdateNotificationSubRows(_settings.PushNotificationsEnabled);
+        }
+        finally
+        {
+            _isLoadingSettings = false;
+        }
     }
 
     // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
 
     private async void OnPushNotificationsToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.PushNotificationsEnabled = e.Value;
         UpdateNotificationSubRows(e.Value);
         await _notifications.RefreshWorkoutReminderScheduleAsync();
@@ -64,17 +76,26 @@ public partial class GeneralSettingsPage : ContentPage
 
     private async void OnWorkoutRemindersToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.WorkoutRemindersEnabled = e.Value;
         await _notifications.RefreshWorkoutReminderScheduleAsync();
     }
 
     private void OnAchievementAlertsToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.AchievementAlertsEnabled = e.Value;
     }
 
     private void OnWeeklySummaryToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.WeeklySummaryEnabled = e.Value;
     }
 
@@ -154,16 +175,25 @@ public partial class GeneralSettingsPage : ContentPage
 
     private void OnScreenReaderToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.ScreenReaderEnabled = e.Value;
     }
 
     private void OnHighContrastToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.HighContrastEnabled = e.Value;
     }
 
     private void OnReduceMotionToggled(object? sender, ToggledEventArgs e)
     {
+        if (_isLoadingSettings)
+            return;
+
         _settings.ReduceMotionEnabled = e.Value;
     }
 

@@ -13,6 +13,10 @@ namespace Fitness_App.Pages
         private IActivitySaveNotifier? _activitySaveNotifier;
         private readonly List<UserActivity> _recentActivities = new();
         private bool _isRefreshing;
+        private bool _refreshAgainRequested;
+        private bool _hasLoadedStats;
+        private bool _isPageVisible;
+        private CancellationTokenSource? _deferredRefreshCts;
         private string _selectedPeriod = "Week";
 
         // Chart data: list of (label, value) pairs kept simple
@@ -35,13 +39,14 @@ namespace Fitness_App.Pages
         protected override void OnAppearing()
         {
             base.OnAppearing();
+            _isPageVisible = true;
 
             ResolveServices();
             LoadProfileData();
-            ShowSkeletonValues();
-            // Fire-and-forget: never block the navigation thread with network I/O.
-            // A blocking await here causes a silent crash in Release/native builds.
-            _ = Task.Run(async () => await RefreshAsync());
+            if (!_hasLoadedStats)
+                ShowSkeletonValues();
+
+            QueueDeferredRefresh();
         }
 
         private void ShowSkeletonValues()
@@ -61,12 +66,17 @@ namespace Fitness_App.Pages
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
+            _isPageVisible = false;
 
             if (_profileService != null)
                 _profileService.ProfileChanged -= OnProfileChanged;
 
             if (_activitySaveNotifier != null)
                 _activitySaveNotifier.ActivitySaved -= OnActivitySaved;
+
+            _deferredRefreshCts?.Cancel();
+            _deferredRefreshCts?.Dispose();
+            _deferredRefreshCts = null;
         }
 
         private void ResolveServices()
@@ -129,57 +139,105 @@ namespace Fitness_App.Pages
         }
 
         private void OnActivitySaved(object? sender, EventArgs e)
-            => MainThread.BeginInvokeOnMainThread(async () => await RefreshAsync());
+            => MainThread.BeginInvokeOnMainThread(QueueDeferredRefresh);
+
+        private void QueueDeferredRefresh()
+        {
+            _deferredRefreshCts?.Cancel();
+            _deferredRefreshCts?.Dispose();
+
+            var cts = new CancellationTokenSource();
+            _deferredRefreshCts = cts;
+            _ = RunDeferredRefreshAsync(cts.Token);
+        }
+
+        private async Task RunDeferredRefreshAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(120, cancellationToken);
+                await RefreshAsync();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[YouPage] Deferred refresh: {ex.Message}");
+            }
+        }
 
         // ─── Stats (simulated) ───────────────────────────────────────────────
         private async Task RefreshAsync()
         {
-            if (_isRefreshing || _statsService == null)
+            if (_statsService == null)
                 return;
 
-            _isRefreshing = true;
-            try
+            if (_isRefreshing)
             {
-                var statsTask        = _statsService.GetAllTimeStatsAsync();
-                var chartTask        = _statsService.GetChartDataAsync(_selectedPeriod);
-                var recentTask       = _statsService.GetRecentActivitiesAsync(3);
-                var trendTask        = _statsService.GetMonthlyKmComparisonAsync();
+                _refreshAgainRequested = true;
+                return;
+            }
 
-                await Task.WhenAll(statsTask, chartTask, recentTask, trendTask);
-
-                var stats            = await statsTask;
-                var chartData        = await chartTask;
-                var recentActivities = await recentTask;
-                var trend            = await trendTask;
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
+            do
+            {
+                _refreshAgainRequested = false;
+                _isRefreshing = true;
+                try
                 {
-                    try { ApplyStats(stats, trend); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyStats: {ex.Message}"); }
+                    await _statsService.SyncPendingActivitiesAsync();
 
-                    try { ApplyChartData(chartData); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyChartData: {ex.Message}"); }
+                    var now              = DateTime.Now;
+                    var thisMonthStart   = new DateTime(now.Year, now.Month, 1);
+                    var statsTask        = _statsService.GetAllTimeStatsAsync();
+                    var thisMonthTask    = _statsService.GetStatsInRangeAsync(thisMonthStart, thisMonthStart.AddMonths(1));
+                    var chartTask        = _statsService.GetChartDataAsync(_selectedPeriod);
+                    var recentTask       = _statsService.GetRecentActivitiesAsync(3);
+                    var trendTask        = _statsService.GetMonthlyKmComparisonAsync();
 
-                    try { ApplyRecentActivities(recentActivities); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyRecentActivities: {ex.Message}"); }
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[YouPage] Refresh: {ex.Message}");
-            }
-            finally
-            {
-                _isRefreshing = false;
-            }
+                    await Task.WhenAll(statsTask, thisMonthTask, chartTask, recentTask, trendTask);
+
+                    var stats            = await statsTask;
+                    var thisMonthStats   = await thisMonthTask;
+                    var chartData        = await chartTask;
+                    var recentActivities = await recentTask;
+                    var trend            = await trendTask;
+
+                    if (!_isPageVisible)
+                        return;
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        try { ApplyStats(stats, thisMonthStats, trend); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyStats: {ex.Message}"); }
+
+                        try { ApplyChartData(chartData); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyChartData: {ex.Message}"); }
+
+                        try { ApplyRecentActivities(recentActivities); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[YouPage] ApplyRecentActivities: {ex.Message}"); }
+
+                        _hasLoadedStats = true;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[YouPage] Refresh: {ex.Message}");
+                }
+                finally
+                {
+                    _isRefreshing = false;
+                }
+            } while (_refreshAgainRequested);
         }
 
-        private void ApplyStats(UserStats stats, (double CurrentMonthKm, double LastMonthKm, double PercentChange) trend)
+        private void ApplyStats(UserStats stats, UserStats thisMonthStats, (double CurrentMonthKm, double LastMonthKm, double PercentChange) trend)
         {
             StatKmLabel.Text         = stats.TotalKmDisplay;
             StatActivitiesLabel.Text = stats.ActivitiesDisplay;
             StatTimeLabel.Text       = stats.TotalTimeDisplay;
             StatSpeedLabel.Text      = stats.AvgSpeedDisplay;
+            StatActiveDaysLabel.Text = thisMonthStats.ActiveDaysDisplay;
 
             // ── Dynamic trend indicator ───────────────────────────────────
             var pct = trend.PercentChange;
@@ -248,7 +306,7 @@ namespace Fitness_App.Pages
             };
 
             var normalBg    = Colors.Transparent;
-            var normalFg    = Color.FromArgb("#64748B");
+            var normalFg    = GetSecondaryTextColor();
 
             TabWeek.BackgroundColor   = normalBg;
             TabMonth.BackgroundColor  = normalBg;
@@ -307,7 +365,7 @@ namespace Fitness_App.Pages
                     cards[i].IsVisible = true;
                     cards[i].HeightRequest = -1; // Auto height
                     cards[i].BindingContext = activity;
-                    badges[i].BackgroundColor = Color.FromArgb("#1E2024");
+                    badges[i].BackgroundColor = GetMutedSurfaceColor();
                     emojis[i].Text = ActivityPresentation.GetSportIcon(activity.Sport);
                     titles[i].Text = string.IsNullOrWhiteSpace(activity.Sport) ? "Activity" : activity.Sport;
 
@@ -341,7 +399,7 @@ namespace Fitness_App.Pages
             float w = info.Width;
             float h = info.Height;
 
-            float padL = 20f, padR = 20f, padT = 20f, padB = 40f;
+            float padL = 40f, padR = 40f, padT = 54f, padB = 42f;
             float chartW = w - padL - padR;
             float chartH = h - padT - padB;
 
@@ -362,13 +420,17 @@ namespace Fitness_App.Pages
                     Convert.ToByte(hex.Substring(2, 2), 16),
                     Convert.ToByte(hex.Substring(4, 2), 16));
 
-            var normalBarColor = new SKColor(255, 255, 255, 10); // subtle faint white for normal bars
+            var normalBarColor = IsLightTheme()
+                ? new SKColor(226, 232, 240) // #E2E8F0
+                : new SKColor(27, 38, 59);   // #1B263B
             
             // Fonts and Paints
             using var textFont = new SKFont(SKTypeface.Default, 24f); 
             using var labelPaint = new SKPaint
             {
-                Color = new SKColor(100, 116, 139), // #64748B
+                Color = IsLightTheme()
+                    ? new SKColor(100, 116, 139) // #64748B
+                    : new SKColor(148, 163, 184), // #94A3B8
                 IsAntialias = true
             };
             using var normalBarPaint = new SKPaint
@@ -418,17 +480,37 @@ namespace Fitness_App.Pages
                     using var tagPaint = new SKPaint { Color = accent.WithAlpha(40), IsAntialias = true };
                     using var tagTextPaint = new SKPaint { Color = accent, IsAntialias = true };
                     
-                    var tagRect = new SKRect(xCenter - 25f, yStart - 28f, xCenter + 25f, yStart - 8f);
+                    const float tagHalfWidth = 34f;
+                    var tagRect = new SKRect(xCenter - tagHalfWidth, yStart - 36f, xCenter + tagHalfWidth, yStart - 10f);
                     canvas.DrawRoundRect(tagRect, 4f, 4f, tagPaint);
                     
                     using var valueFont = new SKFont(SKTypeface.Default, 18f);
-                    canvas.DrawText(_chartData[i].Value.ToString("0.0"), xCenter, yStart - 13f, SKTextAlign.Center, valueFont, tagTextPaint);
+                    canvas.DrawText(_chartData[i].Value.ToString("0.0"), xCenter, yStart - 17f, SKTextAlign.Center, valueFont, tagTextPaint);
                 }
 
                 // X-Axis Text Labels
                 string labelPrefix = _chartData[i].Label.Length > 3 ? _chartData[i].Label.Substring(0, 3).ToUpper() : _chartData[i].Label.ToUpper();
                 canvas.DrawText(labelPrefix, xCenter, h - 8, SKTextAlign.Center, textFont, labelPaint);
             }
+        }
+
+        private static bool IsLightTheme()
+        {
+            return Application.Current?.RequestedTheme == AppTheme.Light;
+        }
+
+        private static Color GetSecondaryTextColor()
+        {
+            return IsLightTheme()
+                ? Color.FromArgb("#64748B")
+                : Color.FromArgb("#94A3B8");
+        }
+
+        private static Color GetMutedSurfaceColor()
+        {
+            return IsLightTheme()
+                ? Color.FromArgb("#F1F5F9")
+                : Color.FromArgb("#1B263B");
         }
 
         // ─── Navigation ──────────────────────────────────────────────────────

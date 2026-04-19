@@ -6,10 +6,10 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="Fitness_App.Pages.YouPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="#16171B">
+             BackgroundColor="{AppThemeBinding Light=#F6F8FB, Dark=#0B0F19}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="24" Padding="20">
+    <ScrollView BackgroundColor="{AppThemeBinding Light=#F6F8FB, Dark=#0B0F19}">
+        <VerticalStackLayout Spacing="24" Padding="20,20,20,88">
 
             <!-- Top Nav Bar -->
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
@@ -24,7 +24,7 @@
                         </Border.StrokeShape>
                         <Grid>
                             <Border x:Name="ProfileIconContainer"
-                                    BackgroundColor="#24252A"
+                                    BackgroundColor="{AppThemeBinding Light=#FFF7ED, Dark=#1B263B}"
                                     StrokeThickness="0">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="18" />
@@ -53,7 +53,7 @@
                     <Label Text="STRIDEX"
                            FontFamily="OpenSansBold"
                            FontSize="18"
-                           TextColor="#FFFFFF"
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
                            VerticalOptions="Center" />
                 </HorizontalStackLayout>
 
@@ -61,14 +61,11 @@
                 <HorizontalStackLayout Grid.Column="2" Spacing="12" VerticalOptions="Center">
                     <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Settings}"
                                        FontSize="28"
-                                       TextColor="#94A3B8">
+                                       TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}">
                         <controls:IconLabel.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnSettingsClicked" />
                         </controls:IconLabel.GestureRecognizers>
                     </controls:IconLabel>
-                    <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Notifications}"
-                                       FontSize="28"
-                                       TextColor="#94A3B8" />
                 </HorizontalStackLayout>
             </Grid>
 
@@ -78,18 +75,18 @@
                        Text="Alex Sterling"
                        FontSize="34"
                        FontAttributes="Bold"
-                       TextColor="#FFFFFF" />
+                       TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
             </VerticalStackLayout>
 
             <!-- Your Progress Section -->
             <VerticalStackLayout Spacing="12">
                 <!-- Section Title -->
                 <HorizontalStackLayout Spacing="8">
-                    <Label Text="Your Progress" FontSize="20" FontAttributes="Bold" TextColor="#FFFFFF" VerticalOptions="Center" />
+                    <Label Text="Your Progress" FontSize="20" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" VerticalOptions="Center" />
                 </HorizontalStackLayout>
 
                 <!-- Featured: Total KM Card -->
-                <Border StrokeThickness="0" BackgroundColor="#1E1F23">
+                <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="14" />
                     </Border.StrokeShape>
@@ -97,7 +94,7 @@
                         <!-- Watermark Icon -->
                         <controls:IconLabel Text="{x:Static icons:MaterialSymbols.Location_on}"
                                            FontSize="110"
-                                           TextColor="#FFFFFF"
+                                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}"
                                            Opacity="0.04"
                                            HorizontalOptions="End"
                                            VerticalOptions="Center"
@@ -110,7 +107,7 @@
                                FontSize="11"
                                FontAttributes="Bold"
                                CharacterSpacing="1.5"
-                               TextColor="#94A3B8" />
+                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
 
                         <HorizontalStackLayout Grid.Row="1" Spacing="4" VerticalOptions="Center" Margin="0,6,0,0">
                             <Label x:Name="StatKmLabel"
@@ -144,7 +141,7 @@
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
 
                     <!-- Total Activities -->
-                    <Border StrokeThickness="0" BackgroundColor="#1E1F23">
+                    <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
@@ -153,20 +150,20 @@
                                    FontSize="10"
                                    FontAttributes="Bold"
                                    CharacterSpacing="1.2"
-                                   TextColor="#64748B" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                             <Label x:Name="StatActivitiesLabel"
                                    Text="156"
                                    FontSize="32"
                                    FontAttributes="Bold"
-                                   TextColor="#FFFFFF" />
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             <Label Text="Sessions recorded"
                                    FontSize="11"
-                                   TextColor="#475569" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Avg. Pace -->
-                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="#1E1F23">
+                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
@@ -175,20 +172,20 @@
                                    FontSize="10"
                                    FontAttributes="Bold"
                                    CharacterSpacing="1.2"
-                                   TextColor="#64748B" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                             <Label x:Name="StatSpeedLabel"
                                    Text="4'52&quot;"
                                    FontSize="32"
                                    FontAttributes="Bold"
-                                   TextColor="#FFFFFF" />
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             <Label Text="Min / KM"
                                    FontSize="11"
-                                   TextColor="#475569" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Calories Burnt -->
-                    <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="#1E1F23">
+                    <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
@@ -197,20 +194,20 @@
                                    FontSize="10"
                                    FontAttributes="Bold"
                                    CharacterSpacing="1.2"
-                                   TextColor="#64748B" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                             <Label x:Name="StatTimeLabel"
                                    Text="42k"
                                    FontSize="32"
                                    FontAttributes="Bold"
-                                   TextColor="#FFFFFF" />
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             <Label Text="Kcal total"
                                    FontSize="11"
-                                   TextColor="#475569" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Active Days -->
-                    <Border Grid.Row="1" Grid.Column="1" StrokeThickness="0" BackgroundColor="#1E1F23">
+                    <Border Grid.Row="1" Grid.Column="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
@@ -219,14 +216,15 @@
                                    FontSize="10"
                                    FontAttributes="Bold"
                                    CharacterSpacing="1.2"
-                                   TextColor="#64748B" />
-                            <Label Text="22"
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                            <Label x:Name="StatActiveDaysLabel"
+                                   Text="0"
                                    FontSize="32"
                                    FontAttributes="Bold"
-                                   TextColor="#FFFFFF" />
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             <Label Text="This month"
                                    FontSize="11"
-                                   TextColor="#475569" />
+                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
                     </Border>
 
@@ -235,17 +233,17 @@
 
 
             <!-- Performance Load Chart Card -->
-            <Border StrokeThickness="0" BackgroundColor="#2A2B30">
+            <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
 
                 <VerticalStackLayout Padding="20" Spacing="24">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Performance&#x0a;Load" FontSize="18" FontAttributes="Bold" TextColor="#FFFFFF" LineHeight="1.2" />
+                        <Label Text="Performance&#x0a;Load" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" LineHeight="1.2" />
 
                         <!-- Segmented Control without TODAY -->
-                        <Border Grid.Column="1" StrokeThickness="0" Padding="4" BackgroundColor="#16171B" VerticalOptions="Start">
+                        <Border Grid.Column="1" StrokeThickness="0" Padding="4" BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0B0F19}" VerticalOptions="Start">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="18" />
                             </Border.StrokeShape>
@@ -266,7 +264,7 @@
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="OnTabMonth" />
                                     </Border.GestureRecognizers>
-                                    <Label x:Name="TabMonthLabel" Text="MONTH" FontSize="11" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" Padding="14,8" TextColor="#64748B" />
+                                    <Label x:Name="TabMonthLabel" Text="MONTH" FontSize="11" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" Padding="14,8" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                                 </Border>
                             </HorizontalStackLayout>
                         </Border>
@@ -284,23 +282,23 @@
             </Border>
 
             <!-- Resting Heart Rate -->
-            <Border StrokeThickness="0" BackgroundColor="#2A2B30">
+            <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
 
                 <VerticalStackLayout Padding="20">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="RESTING HEART RATE" FontSize="11" FontAttributes="Bold" CharacterSpacing="1" TextColor="#94A3B8" />
+                        <Label Text="RESTING HEART RATE" FontSize="11" FontAttributes="Bold" CharacterSpacing="1" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         <controls:IconLabel Grid.Column="1" Text="{x:Static icons:MaterialSymbols.Favorite}" TextColor="#FC5200" FontSize="18" />
                     </Grid>
                     
                     <HorizontalStackLayout Spacing="6" Margin="0,8,0,16" VerticalOptions="End">
-                        <Label Text="54" FontSize="42" FontAttributes="Bold" TextColor="#FFFFFF" />
-                        <Label Text="BPM" FontSize="16" TextColor="#94A3B8" VerticalOptions="End" Margin="0,0,0,8" />
+                        <Label Text="54" FontSize="42" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                        <Label Text="BPM" FontSize="16" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" VerticalOptions="End" Margin="0,0,0,8" />
                     </HorizontalStackLayout>
 
-                    <Label Text="Your recovery is Optimal today. You're&#x0a;ready for high-intensity training." FontSize="14" TextColor="#CBD5E1" LineHeight="1.4" Margin="0,0,0,24" />
+                    <Label Text="Your recovery is Optimal today. You're&#x0a;ready for high-intensity training." FontSize="14" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" LineHeight="1.4" Margin="0,0,0,24" />
 
                     <!-- Static EKG Line using Path (Scalable later) -->
                     <Path Aspect="Uniform" 
@@ -319,14 +317,14 @@
                 <!-- Section Title -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <BoxView WidthRequest="4" HeightRequest="18" Color="#FC5200" VerticalOptions="Center" CornerRadius="2" />
-                    <Label Grid.Column="1" Text="Recent Activities" FontSize="18" FontAttributes="Bold" TextColor="#FFFFFF" VerticalOptions="Center" Margin="8,0,0,0" />
+                    <Label Grid.Column="1" Text="Recent Activities" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" VerticalOptions="Center" Margin="8,0,0,0" />
                     <Label Grid.Column="2" Text="VIEW ALL" FontSize="11" FontAttributes="Bold" CharacterSpacing="1" TextColor="#FC5200" VerticalOptions="Center" Margin="0,4,0,0" />
                 </Grid>
 
-                <Label x:Name="RecentActivitiesEmptyLabel" Text="Your saved workouts will appear here." IsVisible="False" FontSize="14" TextColor="#64748B" />
+                <Label x:Name="RecentActivitiesEmptyLabel" Text="Your saved workouts will appear here." IsVisible="False" FontSize="14" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
 
                 <!-- Activity Card 1 -->
-                <Border x:Name="ActivityCard1" StrokeThickness="0" BackgroundColor="#2A2B30">
+                <Border x:Name="ActivityCard1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="16" />
                     </Border.StrokeShape>
@@ -334,24 +332,24 @@
                         <TapGestureRecognizer Tapped="OnRecentActivityTapped" />
                     </Border.GestureRecognizers>
                     <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                        <Border x:Name="ActivityBadge1" HeightRequest="60" WidthRequest="60" BackgroundColor="#1E2024" StrokeThickness="0">
+                        <Border x:Name="ActivityBadge1" HeightRequest="60" WidthRequest="60" BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#1B263B}" StrokeThickness="0">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
-                            <controls:IconLabel x:Name="ActivityEmoji1" Text="{x:Static icons:MaterialSymbols.Directions_run}" FontSize="28" TextColor="#CBD5E1" HorizontalOptions="Center" VerticalOptions="Center" />
+                            <controls:IconLabel x:Name="ActivityEmoji1" Text="{x:Static icons:MaterialSymbols.Directions_run}" FontSize="28" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label x:Name="ActivityTitle1" Text="Morning Tempo Run" FontSize="16" FontAttributes="Bold" TextColor="#FFFFFF" />
+                                <Label x:Name="ActivityTitle1" Text="Morning Tempo Run" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             </Grid>
-                            <Label x:Name="ActivityMeta1" Text="8.24 km • 42:15 • YESTERDAY" FontSize="12" TextColor="#94A3B8" />
+                            <Label x:Name="ActivityMeta1" Text="8.24 km • 42:15 • YESTERDAY" FontSize="12" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
-                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="#475569" VerticalOptions="Center" />
+                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}" VerticalOptions="Center" />
                     </Grid>
                 </Border>
 
                 <!-- Activity Card 2 -->
-                <Border x:Name="ActivityCard2" StrokeThickness="0" BackgroundColor="#2A2B30">
+                <Border x:Name="ActivityCard2" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="16" />
                     </Border.StrokeShape>
@@ -359,24 +357,24 @@
                         <TapGestureRecognizer Tapped="OnRecentActivityTapped" />
                     </Border.GestureRecognizers>
                     <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                        <Border x:Name="ActivityBadge2" HeightRequest="60" WidthRequest="60" BackgroundColor="#1E2024" StrokeThickness="0">
+                        <Border x:Name="ActivityBadge2" HeightRequest="60" WidthRequest="60" BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#1B263B}" StrokeThickness="0">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
-                            <controls:IconLabel x:Name="ActivityEmoji2" Text="{x:Static icons:MaterialSymbols.Directions_walk}" FontSize="28" TextColor="#CBD5E1" HorizontalOptions="Center" VerticalOptions="Center" />
+                            <controls:IconLabel x:Name="ActivityEmoji2" Text="{x:Static icons:MaterialSymbols.Directions_walk}" FontSize="28" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label x:Name="ActivityTitle2" Text="Evening Walk" FontSize="16" FontAttributes="Bold" TextColor="#FFFFFF" />
+                                <Label x:Name="ActivityTitle2" Text="Evening Walk" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             </Grid>
-                            <Label x:Name="ActivityMeta2" Text="3.1 km • 35:12 • 2 DAYS AGO" FontSize="12" TextColor="#94A3B8" />
+                            <Label x:Name="ActivityMeta2" Text="3.1 km • 35:12 • 2 DAYS AGO" FontSize="12" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
-                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="#475569" VerticalOptions="Center" />
+                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}" VerticalOptions="Center" />
                     </Grid>
                 </Border>
 
                 <!-- Activity Card 3 -->
-                <Border x:Name="ActivityCard3" StrokeThickness="0" BackgroundColor="#2A2B30">
+                <Border x:Name="ActivityCard3" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131C2E}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="16" />
                     </Border.StrokeShape>
@@ -384,19 +382,19 @@
                         <TapGestureRecognizer Tapped="OnRecentActivityTapped" />
                     </Border.GestureRecognizers>
                     <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                        <Border x:Name="ActivityBadge3" HeightRequest="60" WidthRequest="60" BackgroundColor="#1E2024" StrokeThickness="0">
+                        <Border x:Name="ActivityBadge3" HeightRequest="60" WidthRequest="60" BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#1B263B}" StrokeThickness="0">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
-                            <controls:IconLabel x:Name="ActivityEmoji3" Text="{x:Static icons:MaterialSymbols.Pool}" FontSize="28" TextColor="#CBD5E1" HorizontalOptions="Center" VerticalOptions="Center" />
+                            <controls:IconLabel x:Name="ActivityEmoji3" Text="{x:Static icons:MaterialSymbols.Pool}" FontSize="28" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label x:Name="ActivityTitle3" Text="Swim" FontSize="16" FontAttributes="Bold" TextColor="#FFFFFF" />
+                                <Label x:Name="ActivityTitle3" Text="Swim" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
                             </Grid>
-                            <Label x:Name="ActivityMeta3" Text="1.2 km • 42:30 • 3 DAYS AGO" FontSize="12" TextColor="#94A3B8" />
+                            <Label x:Name="ActivityMeta3" Text="1.2 km • 42:30 • 3 DAYS AGO" FontSize="12" TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                         </VerticalStackLayout>
-                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="#475569" VerticalOptions="Center" />
+                        <controls:IconLabel Grid.Column="2" Text="{x:Static icons:MaterialSymbols.Chevron_right}" FontSize="24" TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}" VerticalOptions="Center" />
                     </Grid>
                 </Border>
             </VerticalStackLayout>

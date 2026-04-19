@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flat white notification icon — must be a single-colour alpha mask (no gradients).
+     Android rejects mipmap/launcher icons as status-bar icons; this drawable is the fix. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Running figure — single path, pure white fill, no stroke -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M13.49,5.48
+            C14.6,5.48 15.5,4.58 15.5,3.47
+            C15.5,2.36 14.6,1.47 13.49,1.47
+            C12.38,1.47 11.48,2.36 11.48,3.47
+            C11.48,4.58 12.38,5.48 13.49,5.48
+            Z
+            M16.0,10.78
+            L12.71,7.49
+            L11.28,8.91
+            L14.99,12.63
+            L13.0,17.5
+            L8.0,17.5
+            L8.0,22.5
+            L10.0,22.5
+            L10.0,19.5
+            L15.0,19.5
+            L17.0,14.0
+            Z
+            M7.5,14.5
+            L9.5,16.5
+            L9.5,22.5
+            L7.5,22.5
+            L7.5,17.5
+            L5.5,17.5
+            L5.5,14.0
+            L4.0,10.0
+            L6.0,9.5
+            L7.5,13.5
+            Z" />
+</vector>

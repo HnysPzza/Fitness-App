@@ -10,7 +10,6 @@ namespace Fitness_App.Pages
         private const string ThreeDPreferenceKey = "maps_three_d_enabled";
         private const uint MapStyleSheetAnimationMs = 280;
         private const uint MapStyleOverlayAnimationMs = 200;
-        private const double MapStyleSheetHiddenTranslationY = 400;
         private const int LiveLocationRefreshIntervalMs = 1800;
         private const int HeadingUiThrottleMs = 250;
         private bool _isLoaded;
@@ -39,9 +38,9 @@ namespace Fitness_App.Pages
             _isThreeDEnabled = Preferences.Default.Get(ThreeDPreferenceKey, _isThreeDEnabled);
             StyleSelectorLayer.IsVisible = false;
             StyleSelectorLayer.InputTransparent = true;
-            StyleSelectorSheet.TranslationY = MapStyleSheetHiddenTranslationY;
+            StyleSelectorSheet.TranslationY = -16;
+            StyleSelectorSheet.Opacity = 0;
             StyleSelectorSheet.InputTransparent = true;
-            StyleSelectorBackdrop.Opacity = 0;
             StyleSelectorBackdrop.InputTransparent = true;
             UpdateStyleCheckmarks();
             UpdateThreeDToggle();
@@ -327,11 +326,11 @@ namespace Fitness_App.Pages
                 StyleSelectorLayer.InputTransparent = false;
                 StyleSelectorSheet.InputTransparent = false;
                 StyleSelectorBackdrop.InputTransparent = false;
-                StyleSelectorSheet.TranslationY = MapStyleSheetHiddenTranslationY;
-                StyleSelectorBackdrop.Opacity = 0;
+                StyleSelectorSheet.TranslationY = -16;
+                StyleSelectorSheet.Opacity = 0;
 
                 var slideUp = StyleSelectorSheet.TranslateTo(0, 0, MapStyleSheetAnimationMs, Easing.CubicOut);
-                var fadeIn = StyleSelectorBackdrop.FadeTo(1, MapStyleOverlayAnimationMs, Easing.CubicOut);
+                var fadeIn = StyleSelectorSheet.FadeTo(1, MapStyleOverlayAnimationMs, Easing.CubicOut);
                 await Task.WhenAll(slideUp, fadeIn);
 
                 _isMapStyleSheetOpen = true;
@@ -353,8 +352,8 @@ namespace Fitness_App.Pages
             {
                 _isMapStyleSheetOpen = false;
 
-                var slideDown = StyleSelectorSheet.TranslateTo(0, MapStyleSheetHiddenTranslationY, 250, Easing.CubicIn);
-                var fadeOut = StyleSelectorBackdrop.FadeTo(0, MapStyleOverlayAnimationMs, Easing.CubicIn);
+                var slideDown = StyleSelectorSheet.TranslateTo(0, -16, 180, Easing.CubicIn);
+                var fadeOut = StyleSelectorSheet.FadeTo(0, MapStyleOverlayAnimationMs, Easing.CubicIn);
                 await Task.WhenAll(slideDown, fadeOut);
 
                 StyleSelectorBackdrop.InputTransparent = true;

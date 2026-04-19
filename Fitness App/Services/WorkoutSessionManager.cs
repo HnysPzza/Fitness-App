@@ -9,6 +9,7 @@ public enum WorkoutCommand
 public sealed record WorkoutSessionSnapshot(
     bool IsActive,
     bool IsPaused,
+    bool IsFinishPending,
     string Sport,
     bool IsGpsDependent,
     TimeSpan Elapsed,
@@ -27,6 +28,7 @@ public static class WorkoutSessionManager
     private static bool _isGpsDependent;
     private static double _distanceKm;
     private static double _maxSpeedKmh;
+    private static bool _isFinishPending;
 
     public static event EventHandler<WorkoutCommand>? CommandRequested;
 
@@ -41,6 +43,30 @@ public static class WorkoutSessionManager
             _isGpsDependent = isGpsDependent;
             _distanceKm = 0;
             _maxSpeedKmh = 0;
+            _isFinishPending = false;
+        }
+    }
+
+    public static void Restore(
+        string sport,
+        bool isGpsDependent,
+        DateTimeOffset startedAtUtc,
+        TimeSpan pausedDuration,
+        bool isPaused,
+        bool isFinishPending,
+        double distanceKm,
+        double maxSpeedKmh)
+    {
+        lock (Sync)
+        {
+            _startedAtUtc = startedAtUtc == default ? DateTimeOffset.UtcNow : startedAtUtc;
+            _pausedDuration = pausedDuration < TimeSpan.Zero ? TimeSpan.Zero : pausedDuration;
+            _pausedAtUtc = isPaused || isFinishPending ? DateTimeOffset.UtcNow : null;
+            _sport = string.IsNullOrWhiteSpace(sport) ? "Activity" : sport;
+            _isGpsDependent = isGpsDependent;
+            _distanceKm = Math.Max(0, distanceKm);
+            _maxSpeedKmh = Math.Max(0, maxSpeedKmh);
+            _isFinishPending = isFinishPending;
         }
     }
 
@@ -78,6 +104,7 @@ public static class WorkoutSessionManager
 
             _pausedDuration += DateTimeOffset.UtcNow - _pausedAtUtc.Value;
             _pausedAtUtc = null;
+            _isFinishPending = false;
         }
     }
 
@@ -92,6 +119,20 @@ public static class WorkoutSessionManager
             _isGpsDependent = false;
             _distanceKm = 0;
             _maxSpeedKmh = 0;
+            _isFinishPending = false;
+        }
+    }
+
+    public static void EnterFinishPending()
+    {
+        lock (Sync)
+        {
+            if (_startedAtUtc == default)
+                return;
+
+            _isFinishPending = true;
+            if (!_pausedAtUtc.HasValue)
+                _pausedAtUtc = DateTimeOffset.UtcNow;
         }
     }
 
@@ -102,6 +143,7 @@ public static class WorkoutSessionManager
             if (_startedAtUtc == default)
             {
                 return new WorkoutSessionSnapshot(
+                    false,
                     false,
                     false,
                     "Activity",
@@ -126,6 +168,7 @@ public static class WorkoutSessionManager
             return new WorkoutSessionSnapshot(
                 true,
                 pausedAt.HasValue,
+                _isFinishPending,
                 _sport,
                 _isGpsDependent,
                 elapsed,
@@ -136,8 +179,13 @@ public static class WorkoutSessionManager
         }
     }
 
-    public static void RequestCommand(WorkoutCommand command)
+    public static bool RequestCommand(WorkoutCommand command)
     {
-        CommandRequested?.Invoke(null, command);
+        var handler = CommandRequested;
+        if (handler == null)
+            return false;
+
+        handler.Invoke(null, command);
+        return true;
     }
 }

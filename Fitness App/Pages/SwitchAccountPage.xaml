@@ -1,23 +1,18 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fitness_App.Pages.SwitchAccountPage"
              Title="Switch Account"
-             BackgroundColor="#0B0F19">
+             BackgroundColor="{AppThemeBinding Light=#F6F8FB, Dark=#0B0F19}">
 
     <ContentPage.Resources>
         <Style x:Key="SectionHeaderStyle" TargetType="Label">
             <Setter Property="FontSize" Value="11" />
-            <Setter Property="TextColor" Value="#64748B" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
             <Setter Property="FontAttributes" Value="Bold" />
             <Setter Property="Padding" Value="0,0,0,8" />
             <Setter Property="CharacterSpacing" Value="1.2" />
             <Setter Property="TextTransform" Value="Uppercase" />
-        </Style>
-        <Style x:Key="DividerStyle" TargetType="BoxView">
-            <Setter Property="HeightRequest" Value="1" />
-            <Setter Property="Color" Value="#162033" />
-            <Setter Property="Margin" Value="18,0,18,0" />
         </Style>
     </ContentPage.Resources>
 
@@ -25,89 +20,50 @@
         <VerticalStackLayout Padding="16,18,16,40" Spacing="16">
 
             <Border Padding="18"
-                    BackgroundColor="#111827"
-                    Stroke="#243041"
-                    StrokeThickness="1">
-                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#111827}"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="22" />
+                </Border.StrokeShape>
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Switch Account"
                            FontSize="24"
                            FontAttributes="Bold"
-                           TextColor="#F8FAFC" />
-                    <Label Text="Move between saved accounts quickly while keeping your active profile clear."
+                           TextColor="{AppThemeBinding Light=#0F172A, Dark=#F8FAFC}" />
+                    <Label Text="Use another account saved on this phone without entering its password again."
                            FontSize="13"
-                           TextColor="#94A3B8" />
+                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
                 </VerticalStackLayout>
             </Border>
 
             <Label Text="Signed In As" Style="{StaticResource SectionHeaderStyle}" />
 
             <Border Padding="0"
-                    BackgroundColor="#111827"
-                    Stroke="#243041"
-                    StrokeThickness="1">
-                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
-                <VerticalStackLayout Spacing="0">
-
-            <!-- Current account -->
-            <Grid Padding="18,14" MinimumHeightRequest="78">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" WidthRequest="44" HeightRequest="44"
-                        BackgroundColor="#FC5200" StrokeThickness="0" VerticalOptions="Center" Margin="0,0,12,0">
-                    <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
-                    <Label Text="J" TextColor="White" FontSize="20" FontAttributes="Bold"
-                           HorizontalOptions="Center" VerticalOptions="Center" />
-                </Border>
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                    <Label Text="John Dela Cruz" FontSize="16" FontAttributes="Bold"
-                           TextColor="#F8FAFC" />
-                    <Label Text="john@email.com" FontSize="13" TextColor="#94A3B8" />
-                </VerticalStackLayout>
-                <Label Grid.Column="2" Text="◉" FontSize="22" TextColor="#FC5200" VerticalOptions="Center" />
-            </Grid>
-                </VerticalStackLayout>
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#111827}"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="22" />
+                </Border.StrokeShape>
+                <VerticalStackLayout x:Name="CurrentAccountLayout" Spacing="0" />
             </Border>
 
-            <!-- Other accounts -->
-            <Label Text="Other Accounts" Style="{StaticResource SectionHeaderStyle}" />
+            <Label Text="Saved On This Phone" Style="{StaticResource SectionHeaderStyle}" />
 
             <Border Padding="0"
-                    BackgroundColor="#111827"
-                    Stroke="#243041"
-                    StrokeThickness="1">
-                <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
-                <VerticalStackLayout Spacing="0">
-
-            <Grid Padding="18,14" MinimumHeightRequest="78">
-                <Grid.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnSwitchAccount" CommandParameter="jane@email.com" />
-                </Grid.GestureRecognizers>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" WidthRequest="44" HeightRequest="44"
-                        BackgroundColor="#2196F3" StrokeThickness="0" VerticalOptions="Center" Margin="0,0,12,0">
-                    <Border.StrokeShape><RoundRectangle CornerRadius="22"/></Border.StrokeShape>
-                    <Label Text="J" TextColor="White" FontSize="20" FontAttributes="Bold"
-                           HorizontalOptions="Center" VerticalOptions="Center" />
-                </Border>
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                    <Label Text="Jane Dela Cruz" FontSize="16"
-                           TextColor="#F8FAFC" />
-                    <Label Text="jane@email.com" FontSize="13" TextColor="#94A3B8" />
-                </VerticalStackLayout>
-                <Label Grid.Column="2" Text="○" FontSize="22" TextColor="#475569" VerticalOptions="Center" />
-            </Grid>
-                </VerticalStackLayout>
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#111827}"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="22" />
+                </Border.StrokeShape>
+                <VerticalStackLayout x:Name="SavedAccountsLayout" Spacing="0" />
             </Border>
 
-            <!-- Add Account -->
+            <Label x:Name="EmptyAccountsLabel"
+                   Text="No other saved accounts yet. Add an account once, then it will appear here for quick switching."
+                   FontSize="13"
+                   LineBreakMode="WordWrap"
+                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+
             <Button Text="+ Add Account"
                     Clicked="OnAddAccount"
                     BackgroundColor="#FC5200"

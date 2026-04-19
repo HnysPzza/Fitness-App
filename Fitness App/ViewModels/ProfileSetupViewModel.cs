@@ -109,7 +109,9 @@ public partial class ProfileSetupViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            GeneralError = $"Failed to set picture: {ex.Message}";
+            GeneralError = ex.Message.Contains("Bucket not found", StringComparison.OrdinalIgnoreCase)
+                ? "Profile photo storage is not set up yet. Create a public Supabase Storage bucket named 'avatars'."
+                : $"Failed to set picture: {ex.Message}";
         }
         finally
         {

@@ -8,13 +8,24 @@ namespace Fitness_App
         private readonly ISupabaseService _auth;
         private readonly IProfileService _profile;
         private readonly IAppNotificationService _notifications;
+        private readonly StatsService _stats;
+        private readonly IActivitySaveNotifier _activitySaveNotifier;
 
-        public App(ISupabaseService auth, IProfileService profile, IAppNotificationService notifications)
+        public App(
+            ISupabaseService auth,
+            IProfileService profile,
+            IAppNotificationService notifications,
+            StatsService stats,
+            IActivitySaveNotifier activitySaveNotifier)
         {
             InitializeComponent();
+            ApplySavedThemePreference();
+
             _auth = auth;
             _profile = profile;
             _notifications = notifications;
+            _stats = stats;
+            _activitySaveNotifier = activitySaveNotifier;
 
             AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             {
@@ -29,6 +40,17 @@ namespace Fitness_App
                 System.Diagnostics.Debug.WriteLine(msg);
                 PersistCrashLog(msg);
                 e.SetObserved();
+            };
+        }
+
+        private void ApplySavedThemePreference()
+        {
+            var savedTheme = Preferences.Default.Get("app_theme", "System Default");
+            UserAppTheme = savedTheme switch
+            {
+                "Light" => AppTheme.Light,
+                "Dark" => AppTheme.Dark,
+                _ => AppTheme.Dark
             };
         }
 
@@ -127,6 +149,16 @@ namespace Fitness_App
 
                     await MainThread.InvokeOnMainThreadAsync(() =>
                         Shell.Current.GoToAsync("//home"));
+
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(750);
+                        await MapboxWebViewHtml.PreloadAsync();
+                    });
+
+                    var syncedPending = await _stats.SyncPendingActivitiesAsync();
+                    if (syncedPending > 0)
+                        _activitySaveNotifier.NotifyActivitySaved();
 
                     await Task.Delay(150);
                     await NotificationNavigationService.HandlePendingAsync();

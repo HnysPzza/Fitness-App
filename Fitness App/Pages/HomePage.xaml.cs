@@ -9,6 +9,7 @@ namespace Fitness_App.Pages
         private IMapboxRoutingService? _routingService;
         private IAppNotificationService? _notificationService;
         private IWorkoutPlanService? _workoutPlanService;
+        private CancellationTokenSource? _deferredRefreshCts;
 
         public HomePage()
         {
@@ -30,7 +31,7 @@ namespace Fitness_App.Pages
             }
         }
 
-        protected override async void OnAppearing()
+        protected override void OnAppearing()
         {
             base.OnAppearing();
 
@@ -45,13 +46,7 @@ namespace Fitness_App.Pages
 
             if (BindingContext is HomePageViewModel viewModel)
             {
-                await viewModel.LoadAsync();
-            }
-
-            if (_notificationService != null)
-            {
-                await _notificationService.RequestPermissionAsync();
-                await _notificationService.RefreshWorkoutReminderScheduleAsync();
+                QueueDeferredRefresh(viewModel);
             }
         }
 
@@ -61,6 +56,10 @@ namespace Fitness_App.Pages
 
             if (_profileService != null)
                 _profileService.ProfileChanged -= OnProfileChanged;
+
+            _deferredRefreshCts?.Cancel();
+            _deferredRefreshCts?.Dispose();
+            _deferredRefreshCts = null;
         }
 
         private void OnProfileChanged(object? sender, EventArgs e)
@@ -73,7 +72,7 @@ namespace Fitness_App.Pages
             if (_profileService == null) return;
 
             GreetingLabel.Text = _profileService.GetGreeting();
-            HomeUserNameLabel.Text = $"{_profileService.UserName} 🔥";
+            HomeUserNameLabel.Text = _profileService.UserName;
         }
 
         private void ResolveServices()
@@ -86,6 +85,38 @@ namespace Fitness_App.Pages
             _routingService ??= services.GetService<IMapboxRoutingService>();
             _notificationService ??= services.GetService<IAppNotificationService>();
             _workoutPlanService ??= services.GetService<IWorkoutPlanService>();
+        }
+
+        private void QueueDeferredRefresh(HomePageViewModel viewModel)
+        {
+            _deferredRefreshCts?.Cancel();
+            _deferredRefreshCts?.Dispose();
+
+            var cts = new CancellationTokenSource();
+            _deferredRefreshCts = cts;
+            _ = RunDeferredRefreshAsync(viewModel, cts.Token);
+        }
+
+        private async Task RunDeferredRefreshAsync(HomePageViewModel viewModel, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(120, cancellationToken);
+                await viewModel.LoadAsync();
+
+                if (cancellationToken.IsCancellationRequested || _notificationService == null)
+                    return;
+
+                await _notificationService.RequestPermissionAsync();
+                await _notificationService.RefreshWorkoutReminderScheduleAsync();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[HomePage] Deferred refresh: {ex.Message}");
+            }
         }
 
         private async void OnSettingsClicked(object? sender, EventArgs e)
@@ -103,7 +134,7 @@ namespace Fitness_App.Pages
                 if (Shell.Current is null)
                     return;
 
-                await Shell.Current.GoToAsync("settings");
+                await Shell.Current.GoToAsync("generalsettings");
             }
             catch (Exception ex)
             {
@@ -125,22 +156,6 @@ namespace Fitness_App.Pages
                 return;
 
             await Shell.Current.GoToAsync("workoutreminders");
-        }
-
-        private async void OnQuickSportTapped(object? sender, TappedEventArgs e)
-        {
-            if (sender is not VisualElement view || view.BindingContext is not QuickSportAction action)
-                return;
-
-            await NavigateToRecordAsync(action.Sport);
-        }
-
-        private async void OnLastActivityTapped(object? sender, TappedEventArgs e)
-        {
-            if (BindingContext is not HomePageViewModel viewModel || viewModel.LastActivity == null || Shell.Current == null)
-                return;
-
-            await Shell.Current.GoToAsync($"activitydetail?activityId={Uri.EscapeDataString(viewModel.LastActivity.Id)}");
         }
 
         private async void OnStartWorkoutClicked(object? sender, EventArgs e)

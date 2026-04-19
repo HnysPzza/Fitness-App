@@ -61,6 +61,12 @@ public sealed class SupabaseService : ISupabaseService
 
     // ── Email + Password Sign In ────────────────────────────────────────────
 
+    public async Task ReloadPersistedSessionAsync()
+    {
+        await InitializeAsync();
+        await Task.Run(() => _client!.Auth.LoadSession());
+    }
+
     public async Task<Session?> SignInWithEmailAsync(string email, string password)
     {
         await InitializeAsync();
@@ -119,8 +125,15 @@ public sealed class SupabaseService : ISupabaseService
         var content = new StringContent(body,
             System.Text.Encoding.UTF8, "application/json");
 
-        await http.PostAsync(
+        using var response = await http.PostAsync(
             $"{SupabaseConfig.Url}/auth/v1/resend", content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Supabase resend failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+        }
     }
 
     // ── Sign Out ────────────────────────────────────────────────────────────

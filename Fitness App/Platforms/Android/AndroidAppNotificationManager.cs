@@ -146,9 +146,12 @@ internal static class AndroidAppNotificationManager
             launchIntent,
             BuildPendingFlags(PendingIntentFlags.UpdateCurrent));
 
+        const int reminderAccent = unchecked((int)0xFFFC5200);
         var notification = new NotificationCompat.Builder(context, ReminderChannelId)
-            .SetSmallIcon(Resource.Mipmap.appicon_round)
-            .SetContentTitle("Time to work out!")
+            // ✅ FIX: drawable required — mipmap causes BadNotificationException crash
+            .SetSmallIcon(Resource.Drawable.ic_notification)
+            .SetColor(reminderAccent)
+            .SetContentTitle("🏋️ Time to work out!")
             .SetContentText(message)
             .SetStyle(new NotificationCompat.BigTextStyle().BigText(message))
             .SetAutoCancel(true)
@@ -184,9 +187,12 @@ internal static class AndroidAppNotificationManager
             launchIntent,
             BuildPendingFlags(PendingIntentFlags.UpdateCurrent));
 
+        const int completionAccent = unchecked((int)0xFF10B981); // green for completion
         var notification = new NotificationCompat.Builder(context, CompletionChannelId)
-            .SetSmallIcon(Resource.Mipmap.appicon_round)
-            .SetContentTitle("Recording complete")
+            // ✅ FIX: drawable required — mipmap causes BadNotificationException crash
+            .SetSmallIcon(Resource.Drawable.ic_notification)
+            .SetColor(completionAccent)
+            .SetContentTitle("✅ Workout saved!")
             .SetContentText(body)
             .SetStyle(new NotificationCompat.BigTextStyle().BigText(body))
             .SetAutoCancel(true)

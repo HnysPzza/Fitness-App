@@ -19,6 +19,9 @@ public interface ISupabaseService
     /// <summary>Initializes the Supabase client and attempts to restore a cached session.</summary>
     Task InitializeAsync();
 
+    /// <summary>Reloads the persisted session after another saved account is activated.</summary>
+    Task ReloadPersistedSessionAsync();
+
     /// <summary>Sign in with email + password.</summary>
     Task<Session?> SignInWithEmailAsync(string email, string password);
 

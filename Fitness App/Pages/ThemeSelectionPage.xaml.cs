@@ -44,7 +44,7 @@ public partial class ThemeSelectionPage : ContentPage
         {
             "Light" => AppTheme.Light,
             "Dark" => AppTheme.Dark,
-            _ => AppTheme.Unspecified
+            _ => AppTheme.Dark
         };
     }
 }
